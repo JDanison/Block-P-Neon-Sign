@@ -1,6 +1,6 @@
 RPi Login
 Username:
-pi
+pi or root
 
 Password:
 raspberrypi
