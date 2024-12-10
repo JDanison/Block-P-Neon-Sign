@@ -2,7 +2,7 @@ RPi Login
 Username:
 pi
 
-Password
+Password:
 raspberrypi
 
 ssh command
