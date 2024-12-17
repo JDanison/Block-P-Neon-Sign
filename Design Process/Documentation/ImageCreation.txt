@@ -1,0 +1,7 @@
+Username: pi
+Password: raspberrypi
+
+Setup Pi*
+Setup virtual environment for LED*
+
+*Follow Instructions
