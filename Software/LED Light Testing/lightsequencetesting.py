@@ -1,21 +1,28 @@
 """
     Filename: lightsequencetesting.py
     Filelocation:
-        On Pi: /home/pi/Documents/ledDev
+        On Pi: /home/pi/Documents/ledDev/scripts
         On Git: Software --> LED Light Testing
     Author: John Danison
-    Date: 12/17/2024
+    Created Date: 12/17/2024
+    
+    Last Updated: 12/18/2024
 
     Description:
         This file will serve as developement into getting the raspberry pi to run the LED lights on the outside ring of the block P.
         This will contain a run through several different sequences such that I can monitor and adjust whatever I may need to.
+
+    Physical Setup:
+        GPIO 2: 5V
+        GPIO 4: GND
+        GPIO 18: Data Pin for LED Strip
 """
 
 import time
 from rpi_ws281x import PixelStrip, Color
 
 # LED strip configuration:
-LED_COUNT = 30        # Number of LED pixels on the strip
+LED_COUNT = 10        # Number of LED pixels on the strip
 LED_PIN = 18          # GPIO pin connected to the LED strip (must support PWM, GPIO18)
 LED_FREQ_HZ = 800000  # LED signal frequency (usually 800kHz for WS2812)
 LED_DMA = 10          # DMA channel to use for generating signals
