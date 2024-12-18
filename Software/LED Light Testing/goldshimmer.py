@@ -1,16 +1,15 @@
 """
-    Filename: lightsequencetesting.py
+    Filename: goldshimmer.py
     Filelocation:
         On Pi: /home/pi/Documents/ledDev/scripts
         On Git: Software --> LED Light Testing
     Author: John Danison
-    Created Date: 12/17/2024
+    Created Date: 12/18/2024
     
     Last Updated: 12/18/2024
 
     Description:
-        This file will serve as developement into getting the raspberry pi to run the LED lights on the outside ring of the block P.
-        This will contain a run through several different sequences such that I can monitor and adjust whatever I may need to.
+        This file contains the code for controlling the WS281x LED strips to be a shimmering gold. This is the desired set function that the wall mount will be.
 
     Physical Setup:
         GPIO 2: 5V
@@ -18,7 +17,6 @@
         GPIO 18: Data Pin for LED Strip
 """
 
-import random
 import time
 from rpi_ws281x import PixelStrip, Color
 
@@ -76,40 +74,12 @@ def chase(color, wait_ms=50):
         time.sleep(wait_ms / 1000.0)
         strip.setPixelColor(i, Color(0, 0, 0))  # Turn off after moving
 
-# Function: Gold shimmer effect
-#TODO: Need to make the gold look better and the shimmer be slightly more subtle
-def gold_shimmer(wait_ms=100, shimmer_count=20):
-    gold = Color(255, 215, 0)  # Gold color (approximate)
-    
-    # Set the entire strip to gold
-    for i in range(strip.numPixels()):
-        strip.setPixelColor(i, gold)
-    strip.show()
-    
-    # Create shimmer effect
-    for _ in range(shimmer_count):
-        # Randomly select LEDs to dim temporarily
-        twinkle_leds = random.sample(range(strip.numPixels()), k = strip.numPixels() // 3)
-        
-        # Dim the selected LEDs
-        for i in twinkle_leds:
-            strip.setPixelColor(i, Color(128, 107, 0))  # Dimmed gold
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
-        
-        # Restore all LEDs to full gold
-        for i in twinkle_leds:
-            strip.setPixelColor(i, gold)
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
-        
 # Main program
 if __name__ == "__main__":
     try:
         print("Press Ctrl+C to stop the program.")
         
         while True:
-            """
             print("Solid Color: Red")
             solid_color(Color(255, 0, 0))  # Red
             time.sleep(1)
@@ -127,9 +97,6 @@ if __name__ == "__main__":
 
             print("Rainbow effect...")
             rainbow()
-            """
-            print("Gold Shimmer Effect")
-            gold_shimmer()
 
     except KeyboardInterrupt:
         print("\nExiting program and clearing LEDs.")
