@@ -23,11 +23,11 @@ import time
 from rpi_ws281x import PixelStrip, Color
 
 # LED strip configuration:
-LED_COUNT = 10        # Number of LED pixels on the strip
+LED_COUNT = 100        # Number of LED pixels on the strip
 LED_PIN = 18          # GPIO pin connected to the LED strip (must support PWM, GPIO18)
 LED_FREQ_HZ = 800000  # LED signal frequency (usually 800kHz for WS2812)
 LED_DMA = 10          # DMA channel to use for generating signals
-LED_BRIGHTNESS = 255  # Brightness (0-255)
+LED_BRIGHTNESS = 150  # Brightness (0-255)
 LED_INVERT = False    # Invert signal (useful when using level shifters)
 LED_CHANNEL = 0       # PWM channel
 
@@ -77,9 +77,15 @@ def chase(color, wait_ms=50):
         strip.setPixelColor(i, Color(0, 0, 0))  # Turn off after moving
 
 # Function: Gold shimmer effect
-#TODO: Need to make the gold look better and the shimmer be slightly more subtle
-def gold_shimmer(wait_ms=100, shimmer_count=20):
-    gold = Color(255, 215, 0)  # Gold color (approximate)
+def gold_shimmer():
+    # Parameters For Color Fade
+    wait_ms = 250
+    shimmer_count = 20
+    fade_steps = 10
+    
+    #Gold Colors
+    gold = Color(195, 65, 0)  # Full gold color
+    dim_gold = Color(140, 40, 0)  # Dimmed gold color
     
     # Set the entire strip to gold
     for i in range(strip.numPixels()):
@@ -88,20 +94,31 @@ def gold_shimmer(wait_ms=100, shimmer_count=20):
     
     # Create shimmer effect
     for _ in range(shimmer_count):
-        # Randomly select LEDs to dim temporarily
+        # Randomly select LEDs to shimmer
         twinkle_leds = random.sample(range(strip.numPixels()), k = strip.numPixels() // 3)
         
-        # Dim the selected LEDs
-        for i in twinkle_leds:
-            strip.setPixelColor(i, Color(128, 107, 0))  # Dimmed gold
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
+        # Fade to dimmed gold
+        for step in range(1, fade_steps + 1):
+            for i in twinkle_leds:
+                # Interpolate between full gold and dimmed gold
+                r = int(195 - step * (195 - 140) / fade_steps)
+                g = int(65 - step * (65 - 40) / fade_steps)
+                b = int(0)  # No blue component in gold
+                strip.setPixelColor(i, Color(r, g, b))
+            strip.show()
+            time.sleep(wait_ms / (1000.0 * fade_steps))
         
-        # Restore all LEDs to full gold
-        for i in twinkle_leds:
-            strip.setPixelColor(i, gold)
-        strip.show()
-        time.sleep(wait_ms / 1000.0)
+        # Fade back to full gold
+        for step in range(1, fade_steps + 1):
+            for i in twinkle_leds:
+                # Interpolate between dimmed gold and full gold
+                r = int(160 + step * (195 - 160) / fade_steps)
+                g = int(40 + step * (65 - 40) / fade_steps)
+                b = int(0)  # No blue component in gold
+                strip.setPixelColor(i, Color(r, g, b))
+            strip.show()
+            time.sleep(wait_ms / (1000.0 * fade_steps))
+
         
 # Main program
 if __name__ == "__main__":
@@ -109,7 +126,6 @@ if __name__ == "__main__":
         print("Press Ctrl+C to stop the program.")
         
         while True:
-            """
             print("Solid Color: Red")
             solid_color(Color(255, 0, 0))  # Red
             time.sleep(1)
@@ -127,7 +143,7 @@ if __name__ == "__main__":
 
             print("Rainbow effect...")
             rainbow()
-            """
+        
             print("Gold Shimmer Effect")
             gold_shimmer()
 
