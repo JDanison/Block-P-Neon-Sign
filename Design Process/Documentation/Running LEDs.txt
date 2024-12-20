@@ -1,0 +1,4 @@
+This is how to run the python scripts to control the LED lights on the pi. This can be done either via terminal, ssh file, or on the pi itself.
+
+1) cd to ~/Documents/LEDLights/ledDev/scripts
+2) sudo python3 goldshimmer.py
