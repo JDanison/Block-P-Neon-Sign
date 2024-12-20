@@ -1,0 +1,11 @@
+RPi Login
+Username:
+pi or root
+
+Password:
+raspberrypi
+
+ssh command
+ssh pi@raspberrypi.local
+
+keys located at ~/.ssh/known_hosts
