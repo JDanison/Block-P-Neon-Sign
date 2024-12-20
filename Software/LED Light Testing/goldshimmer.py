@@ -6,15 +6,21 @@
     Author: John Danison
     Created Date: 12/18/2024
     
-    Last Updated: 12/18/2024
+    Last Updated: 12/20/2024
 
     Description:
         This file contains the code for controlling the WS281x LED strips to be a shimmering gold. This is the desired set function that the wall mount will be.
 
     Physical Setup:
-        GPIO 2: 5V
+        Light Strip:
         GPIO 4: GND
         GPIO 18: Data Pin for LED Strip
+
+        Light Strip Power:
+        Red to +V on external supply
+        Black to -V on external supply
+
+        This is done because the Pi cannot supply enough power by itself to power all LEDs in strip.
 """
 
 import random

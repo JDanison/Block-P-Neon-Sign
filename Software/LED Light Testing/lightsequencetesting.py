@@ -13,9 +13,15 @@
         This will contain a run through several different sequences such that I can monitor and adjust whatever I may need to.
 
     Physical Setup:
-        GPIO 2: 5V
+        Light Strip:
         GPIO 4: GND
         GPIO 18: Data Pin for LED Strip
+
+        Light Strip Power:
+        Red to +V on external supply
+        Black to -V on external supply
+
+        This is done because the Pi cannot supply enough power by itself to power all LEDs in strip.
 """
 
 import random
