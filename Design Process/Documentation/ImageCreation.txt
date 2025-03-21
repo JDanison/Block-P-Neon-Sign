@@ -1,12 +1,30 @@
 Username: pi
-Password: raspberrypi
+Password: raspberry
 
 Setup Pi*
 Setup virtual environment for LED*
 
 *Follow Instructions
 
-LED Libary Commands
+LED Libary Commands:
 sudo pip3 install rpi_ws281x --break-system-packages
 sudo pip3 install adafruit-circuitpython-neopixel --break-system-packages
 sudo python3 -m pip install --force-reinstall adafruit-blinka --break-system-packages
+
+
+Setup Background Image:
+1) Open WinSCP
+2) Connect to Raspberry Pi as root
+3) Place the Background image (OregonBlockP.JPG) into the /usr/share/rpd-wallpaper/ folder
+4) On the physcial raspberry pi go to "Desktop Preferences"
+5) Select the new background image for the "picture" option
+6) *Optional* select the Layout that works best. I need to select "Stretch to cover screen".
+
+Selecting Audio Device:
+1) sudo raspi-config
+2) "1 System Options"
+3) "S2 Audio"
+4) "## USB PnP Audio Device
+5) "<Finish>"
+6) sudo reboot now
+

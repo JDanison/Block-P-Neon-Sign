@@ -1,0 +1,9 @@
+sudo apt update
+sudo apt full-upgrade -y
+
+sudo reboot now
+
+git clone https://github.com/goodtft/LCD-show.git
+cd LCD-show/
+chmod +x LCD35-show
+sudo ./LCD35-show

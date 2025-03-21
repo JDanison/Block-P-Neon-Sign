@@ -29,7 +29,7 @@ from rpi_ws281x import PixelStrip, Color
 
 # LED strip configuration:
 LED_COUNT = 50        # Number of LED pixels on the strip
-LED_PIN = 18          # GPIO pin connected to the LED strip (must support PWM, GPIO18)
+LED_PIN = 12          # GPIO pin connected to the LED strip (must support PWM, GPIO18)
 LED_FREQ_HZ = 800000  # LED signal frequency (usually 800kHz for WS2812)
 LED_DMA = 10          # DMA channel to use for generating signals
 LED_BRIGHTNESS = 255  # Brightness (0-255)

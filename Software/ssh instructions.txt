@@ -3,9 +3,10 @@ Username:
 pi or root
 
 Password:
-raspberrypi
+raspberry
 
 ssh command
 ssh pi@raspberrypi.local
 
 keys located at ~/.ssh/known_hosts
+Remove with rm
