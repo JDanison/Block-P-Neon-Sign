@@ -1,0 +1,38 @@
+How to Setup Server On RPi
+
+Setting up the backend (Server)
+Using Node.js and npm
+
+Installations:
+1) sudo apt update
+2) sudo apt install nodejs npm -y
+
+Verify Installs
+1) node -v
+2) npm -v
+
+Setup Front End (React)
+1) sudo npm install -g create-react-app
+2) cd /home/pi/Documents 
+3) sudo npx create-react-app neon-sign-frontend
+4) cd neon-sign-frontend/
+5) sudo npm install axios
+6) Replace the App.js with the new one
+7) sudo npm start
+8) Test with http://localhost:3000 or http://http://192.168.4.127:3000
+
+Making it look pretty (Material-UI)
+1) sudo npm install @mui/material @emotion/react @emotion/styled
+2) Edit App.js
+
+
+
+
+
+Backend (Node.js)
+1) cd /home/pi/Documents
+2) mkdir neon-sign-backend
+3) cd /home/pi/Documents/neon-sign-backend
+4) sudo npm install express socket.io
+5) place server.js file into the directory
+6) test with http://192.168.4.127:3000/api/lights/on
