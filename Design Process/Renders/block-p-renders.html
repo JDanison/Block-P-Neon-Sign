@@ -75,6 +75,7 @@ a{color:var(--bright)}
     <div class="bar">
       <div class="group" id="views"><span>View</span></div>
       <div class="group"><span>Angle</span><button id="ang-front" aria-pressed="true">Front</button><button id="ang-side" aria-pressed="false">Side</button><button id="ang-below" aria-pressed="false">Below</button></div>
+      <div class="group"><span>Zoom</span><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button></div>
       <div class="group"><span>LEDs</span><button id="led-on" aria-pressed="true">Gold</button><button id="led-off" aria-pressed="false">Off</button></div>
       <div class="group"><span>Room</span><button id="room-dim" aria-pressed="true">Dim</button><button id="room-lit" aria-pressed="false">Lit</button></div>
       <div class="group"><span>Print</span><button id="fin-black" aria-pressed="true">Black</button><button id="fin-white" aria-pressed="false">White</button></div>
@@ -328,7 +329,7 @@ try {
   const scene=new THREE.Scene(); scene.background=new THREE.Color(0x0b0a09);
   const camera=new THREE.PerspectiveCamera(30,1,50,30000);
   const controls=new OrbitControls(camera,renderer.domElement);
-  controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.85; controls.minDistance=150; controls.maxDistance=12000;
+  controls.enableDamping=true; controls.maxPolarAngle=Math.PI*.85; controls.minDistance=150; controls.zoomSpeed=.22; controls.maxDistance=12000;
 
   const ambient=new THREE.AmbientLight(0xfff1dd,.14); scene.add(ambient);
   const key=new THREE.DirectionalLight(0xfff4e6,.35); key.position.set(-800,2600,2600); scene.add(key);
@@ -461,6 +462,26 @@ try {
   };
   controls.addEventListener('start',()=>{goal.active=false});
 
+  // Own wheel zoom: one notch moves about 4%, however the mouse or browser reports it.
+  const zoomTo={d:null};
+  const zoomBy=f=>{const cur=zoomTo.d??camera.position.distanceTo(controls.target);goal.active=false;zoomTo.d=Math.min(controls.maxDistance,Math.max(controls.minDistance,cur*f));};
+  host.addEventListener('wheel',e=>{
+    e.preventDefault();e.stopPropagation();
+    const unit=e.deltaMode===1?40:e.deltaMode===2?400:1;
+    zoomBy(Math.exp(Math.max(-120,Math.min(120,e.deltaY*unit))*.00033));
+  },{passive:false,capture:true});
+  const stepZoom=()=>{
+    if(zoomTo.d===null) return false;
+    const dir=camera.position.clone().sub(controls.target), cur=dir.length(), next=cur+(zoomTo.d-cur)*.25;
+    camera.position.copy(controls.target).add(dir.setLength(next));
+    if(Math.abs(zoomTo.d-cur)<.5) zoomTo.d=null;
+    return true;
+  };
+  window.__viewDistance=()=>camera.position.distanceTo(controls.target);
+  window.__settleZoom=()=>{for(let i=0;i<200&&stepZoom();i++);};
+
+  document.getElementById('zoom-in').onclick=()=>zoomBy(.85);
+  document.getElementById('zoom-out').onclick=()=>zoomBy(1/.85);
   pair('led-on','led-off',v=>{led.color.copy(v?ledLit:ledOff);glows.forEach(g=>g.visible=v)});
   pair('room-dim','room-lit',v=>{ambient.intensity=v?.14:1.1;key.intensity=v?.35:1.6;bloom.strength=v?.5:.25;scene.background.set(v?0x0b0a09:0x1b1917)});
   pair('fin-black','fin-white',v=>body.color.set(v?0x1b1a1a:0xece8e0));
@@ -473,6 +494,7 @@ try {
       camera.position.lerp(goal.pos,.09); controls.target.lerp(goal.tgt,.09);
       if(camera.position.distanceTo(goal.pos)<4) goal.active=false;
     }
+    stepZoom();
     controls.update(); composer.render();
   });
   // Load hook for the lineup after the display font arrives.

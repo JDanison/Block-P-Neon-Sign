@@ -1,0 +1,528 @@
+<title>Block P CAD</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Layout: workshop bench. A large model viewer first, then the build sheet. Single dark look by choice. */
+:root{
+  --bg:#121110; --panel:#1c1a18; --line:#3a352e; --fg:#f1ece2; --muted:#b4aa9b;
+  --gold:#cfb991; --bright:#ffc04a;
+  --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
+  --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
+  --mono:"JetBrains Mono",Consolas,monospace;
+  color-scheme:dark;
+}
+html{background:var(--bg)}
+body{background:var(--bg);color:var(--fg);font:17px/1.55 var(--body)}
+[hidden]{display:none!important}
+.wrap{max-width:1120px;margin:0 auto;padding-block:32px 64px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:grid;gap:36px}
+.wrap>*{min-width:0}
+h1,h2{font-family:var(--display);font-weight:800;letter-spacing:.02em;text-transform:uppercase;line-height:1.05;text-wrap:balance;margin:0;color:var(--gold)}
+h1{font-size:clamp(38px,6vw,60px)} h2{font-size:clamp(28px,4vw,38px)}
+h3{font:600 18px/1.3 var(--body);margin:0}
+p{margin:0;max-width:68ch}
+.stack{display:grid;gap:14px}
+.viewer{position:relative;background:#000;border:1px solid var(--line);height:min(70vh,640px);min-height:380px;overflow:hidden}
+.viewer canvas{display:block;width:100%;height:100%;touch-action:none}
+#fail{position:absolute;inset:0;display:grid;place-items:center;padding:24px;text-align:center;color:var(--muted)}
+.bar{display:flex;flex-wrap:wrap;gap:8px 20px;align-items:center}
+.group{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.group>span,label.slide>span{font:600 12px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+button{font:600 15px var(--body);color:var(--fg);background:var(--panel);border:1px solid var(--line);padding:7px 12px;cursor:pointer;min-height:38px}
+button[aria-pressed="true"]{background:var(--gold);border-color:var(--gold);color:#17140f}
+button:hover{border-color:var(--gold)}
+:focus-visible{outline:2px solid var(--bright);outline-offset:2px}
+label.slide{display:flex;align-items:center;gap:8px;flex:1 1 240px;min-width:0}
+label.slide input{flex:1;min-width:0;accent-color:var(--gold)}
+.two{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px}
+.two>*{min-width:0}
+ul,ol{margin:0;padding-left:22px;display:grid;gap:8px}
+.tablewrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:15px}
+th,td{text-align:left;padding:7px 12px 7px 0;border-bottom:1px solid var(--line);vertical-align:top}
+th{font:600 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+td.n,th.n{text-align:right;font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap}
+code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
+.steps{display:grid;gap:10px;background:var(--panel);border:1px solid var(--gold);padding:16px;min-width:0}
+.steps h3{font:800 26px/1.1 var(--display);letter-spacing:.02em;text-transform:uppercase;color:var(--gold)}
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.modes button{font:800 clamp(18px,3vw,24px)/1.1 var(--display);letter-spacing:.03em;text-transform:uppercase;min-height:56px;padding:10px 12px}
+.count{font:600 13px var(--mono);color:var(--muted)}
+.note{color:var(--muted);font-size:15px}
+</style>
+
+<div class="wrap">
+  <header class="stack">
+    <h1>Block P CAD</h1>
+    <p>The 8" build for the Bambu H2C, about 15.4 × 12.6 × 2.2 in. Pick <strong>Build guide</strong> above the model to see the assembly order. The LED strip is modeled as a standard 10 mm WS2812B until you confirm yours, and some other sizes are estimates until your parts arrive. Drag to rotate, scroll or use + and − to zoom, and right-drag to move.</p>
+  </header>
+
+  <section class="stack">
+    <div class="modes" role="group" aria-label="Viewer mode">
+      <button id="mode-explore" aria-pressed="true">Explore model</button>
+      <button id="mode-build" aria-pressed="false">Build guide: 12 steps</button>
+    </div>
+    <div class="viewer" id="viewer"><div id="fail">Loading the model…</div></div>
+    <div class="steps" id="stepPanel" hidden>
+      <div class="bar">
+        <button id="step-prev">Back</button>
+        <button id="step-next">Next</button>
+        <span class="count" id="step-count"></span>
+      </div>
+      <h3 id="step-title"></h3>
+      <p id="step-text"></p>
+      <ul id="step-tips"></ul>
+    </div>
+    <div class="bar">
+      <div class="group" id="views"><span>View</span></div>
+      <div class="group"><span>Zoom</span><button id="zoom-in" aria-label="Zoom in">+</button><button id="zoom-out" aria-label="Zoom out">−</button></div>
+      <div class="group"><span>LEDs</span><button id="led-on" aria-pressed="true">On</button><button id="led-off" aria-pressed="false">Off</button></div>
+    </div>
+    <div class="bar">
+      <label class="slide" id="explodeRow" for="explode"><span>Explode</span><input id="explode" type="range" min="0" max="100" value="0"></label>
+      <label class="slide" id="cutRow" for="cut"><span>Cut through depth</span><input id="cut" type="range" min="0" max="100" value="100"></label>
+    </div>
+    <div class="group" id="groups"><span>Show</span></div>
+  </section>
+
+  <section class="stack">
+    <h2>How the LEDs get power</h2>
+    <p>Power reaches the strip at the inside corner where the stem meets the band under the screen. That corner has two 6 mm wire holes, and the bare wall there stays free of LEDs. Use the <strong>LED power</strong> view to see it from behind.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Hole</th><th>Wires</th><th>Goes to</th></tr></thead>
+      <tbody>
+        <tr><td>Band side, 5 mm right of the corner</td><td>5V, ground and data</td><td>Start of the strip, running right along the underside of the band</td></tr>
+        <tr><td>Stem side, 5 mm below the corner</td><td>5V and ground only</td><td>Far end of the strip, after it has gone all the way around</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Both ends get power so the far LEDs stay bright. The data wire connects only at the start. In the viewer, red is 5V, black is ground, green is data and orange is 12V.</p>
+  </section>
+
+  <section class="stack">
+    <h2>How the screen connects</h2>
+    <p>The panel is 194 × 119 × 5 mm, and 11 mm with its rear circuit board. It sits rotated 180°, so its HDMI and power ports face down toward the Pi. Use the <strong>Screen wiring</strong> view to see it from behind.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Screen port</th><th>Cable</th><th>Comes from</th></tr></thead>
+      <tbody>
+        <tr><td>HDMI</td><td>Flat HDMI ribbon</td><td>The Pi's micro-HDMI port beside the USB-C port (HDMI 0)</td></tr>
+        <tr><td>Power USB-C</td><td>USB-C power lead</td><td>The 5V junction</td></tr>
+        <tr><td>Touch USB-C</td><td>1 ft right-angle USB cable</td><td>The Pi's upper USB 2.0 port</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">The speaker and button headers, audio jack and backlight switch stay unused. The picture and touch are rotated in software on the Pi.</p>
+  </section>
+
+  <section class="stack">
+    <h2>Wire bend check</h2>
+    <p>Every corner in the model is a true arc, built at that cable's minimum bend radius. Route ends leave their connectors straight, then turn.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>Route</th><th>Cable</th><th class="n">Minimum (mm)</th><th class="n">Tightest (mm)</th><th class="n">Length (mm)</th><th>Status</th></tr></thead>
+      <tbody id="bends"></tbody>
+    </table></div>
+    <p class="note" id="bendNote"></p>
+  </section>
+
+  <section class="stack">
+    <h2>Parts to print</h2>
+    <div class="tablewrap"><table>
+      <thead><tr><th>File</th><th>Filament</th><th>Size (mm)</th><th>Job</th></tr></thead>
+      <tbody>
+        <tr><td><code>shell_upper</code></td><td>Black</td><td>321 × 252 × 55</td><td>Top of the sign, screen window, speaker pockets, vents</td></tr>
+        <tr><td><code>shell_lower</code></td><td>Black</td><td>113 × 139 × 55</td><td>Lower stem and foot, power jack</td></tr>
+        <tr><td><code>diffuser_upper</code></td><td>Translucent white</td><td>321 × 252 × 17</td><td>Glowing outline, glued over the LED channel</td></tr>
+        <tr><td><code>diffuser_lower</code></td><td>Translucent white</td><td>113 × 139 × 17</td><td>Same, for the lower section</td></tr>
+        <tr><td><code>cover_upper</code></td><td>Black</td><td>315 × 275 × 24</td><td>Back panel, wall keyholes, Pi and board mounts</td></tr>
+        <tr><td><code>cover_lower</code></td><td>Black</td><td>107 × 109 × 8</td><td>Back panel for the stem and foot</td></tr>
+        <tr><td>4 <code>screen_clip</code> files</td><td>Black</td><td>33 × 16 × 4</td><td>Hold the screen by its corners, leaving the cable paths open</td></tr>
+        <tr><td><code>stem_splice</code></td><td>Black</td><td>25 × 40 × 4</td><td>Joins the two shell sections inside the stem</td></tr>
+        <tr><td><code>audio_strap</code></td><td>Black</td><td>48 × 12 × 3</td><td>Holds the USB dongle in its cradle</td></tr>
+        <tr><td><code>pi_bracket_left</code>, <code>pi_bracket_low</code>, <code>pi_bracket_high</code></td><td>Black</td><td>3 mm thick</td><td>Hold the Pi case by its top screw positions</td></tr>
+      </tbody>
+    </table></div>
+    <p class="note">Every piece fits the H2C, but the two upper sections are 321 mm wide, so print those on the left nozzle only, where the bed is 325 mm wide. The print files are already laid flat, and the whole sign uses up to about 910 g of filament at full infill, so far less at normal settings. Print the two test corners in <code>print/test_pieces</code> first to check the diffuser fit and glow. For the smoothest face, print the shells face down on a smooth PEI plate.</p>
+  </section>
+
+  <section class="two">
+    <div class="stack">
+      <h2>How it goes together</h2>
+      <ol>
+        <li>Cut the strip into 12 sections, one for each straight wall, and stick them to the channel wall. Solder short 3-wire jumpers across the 11 corners, following the arrows on the strip. The two ends finish at the wire holes beside the stem.</li>
+        <li>Join the shell sections with the stem splice and 4 M3 screws, then glue on the diffusers.</li>
+        <li>Hook each speaker's two front tabs under the pads, drivers facing the grille, then lower it onto the two rear posts and fit 2 M3 × 12 mm screws. Run a screwdriver in along the inside with the cover off. Do this before fitting the screen.</li>
+        <li>Set the screen in from behind, rotated 180° so its ports face down, and screw on the 4 corner clips. The picture is flipped back in software.</li>
+        <li>Assemble the Pi in its case, using the kit's extra brass spacers on top. Set it in its corner stops on the upper cover and fit the three brackets. Add the converter and level shifter. Set the USB dongle in its cradle, screw the strap over it, and connect it to the Pi with its short USB cable. Then route and zip-tie the wires.</li>
+        <li>Fit the power jack through the foot, connect everything and test it.</li>
+        <li>Screw on both covers. The upper cover bridges the shell joint for strength.</li>
+        <li>Hang it on 2 wall screws, 201 mm apart, using the keyholes.</li>
+      </ol>
+    </div>
+    <div class="stack">
+      <h2>How it's designed</h2>
+      <ul>
+        <li><strong>Power cord:</strong> It enters through the bottom of the foot and hangs straight down the wall.</li>
+        <li><strong>Wires:</strong> They run up the stem, then along a channel above the speakers, behind the screen. Each route is checked as a 3 mm bundle.</li>
+        <li><strong>Speakers:</strong> Two rear screws and two front hooks hold each one. The grille sits about 9 mm below the speaker face, and a 16 mm gap between the speakers gives their cables room.</li>
+        <li><strong>Raspberry Pi:</strong> The N300 case has no mounting holes underneath, so three printed brackets hold it from its top spacers, with corner stops around the case. Its fins face the back cover vents.</li>
+        <li><strong>USB dongle:</strong> It has no mounting holes, so a low cradle and screwed strap hold it, with its 4-pin header facing the speakers.</li>
+        <li><strong>LEDs:</strong> 71 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
+        <li><strong>Cooling:</strong> Air enters through slots beside the stem, rises past the Pi and exits through the top wall.</li>
+        <li><strong>Servicing:</strong> The covers come off with screws, so the wiring stays reachable. The diffusers are glued on.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="two">
+    <div class="stack">
+      <h2>Send when parts arrive</h2>
+      <ul>
+        <li>Screen: exact port positions on the rear board. They're scaled from a photo</li>
+        <li>Speakers, which you already have: length, width, thickness, tab hole size and spacing, and how far the tabs sit from the face</li>
+        <li>Converter: length, width, thickness and mounting holes</li>
+        <li>USB dongle, which you already have: total length, body length, width and thickness</li>
+        <li>Power jack: hole size and thread</li>
+        <li>LED strip: width, LEDs per meter, total length and thickness</li>
+        <li>Pi in its case: length, width, thickness and top-of-USB height</li>
+      </ul>
+    </div>
+    <div class="stack">
+      <h2>Small hardware</h2>
+      <ul>
+        <li>32 M3 × 10 mm self-tapping screws: 22 for the covers, 4 for the splice, 2 for the dongle strap and 4 for the Pi brackets</li>
+        <li>4 M3 × 8 mm self-tapping screws for the screen clips. Don't go longer, or they will reach the front face</li>
+        <li>4 M3 × 12 mm self-tapping screws, for the speakers</li>
+        <li>4 M2.5 × 6 mm screws, for the level shifter board. The Pi case kit includes its own M2.5 screws and spacers</li>
+        <li>10 small zip ties, 3.6 mm wide or narrower, for the 10 clips on the back cover</li>
+        <li>2 wall screws with heads under 9 mm, shafts under 5 mm</li>
+        <li>Thin wire for 33 corner jumper wires, 3 at each of 11 corners. Stranded 24 AWG or thinner bends best</li>
+        <li>4 stick-on felt pads, to hold the back about 3 mm off the wall</li>
+        <li>CA glue for the diffusers, plus thin foam tape for the dongle strap</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="stack">
+    <h2>Files</h2>
+    <p>All files are in <code>Hardware/CAD</code> in your project folder.</p>
+    <ul>
+      <li><code>print/black</code> and <code>print/white</code>: STL files for Bambu Studio, sorted by filament color and already flat on the bed. <code>print/PRINT_LIST.md</code> lists every file</li>
+      <li><code>step</code>: exact CAD files for each part and the full assembly</li>
+      <li><code>block_p_assembly_preview.stl</code>: the whole assembled sign, for other model viewers</li>
+      <li><code>block_p.py</code>: the model itself. Every size is a named number at the top</li>
+    </ul>
+  </section>
+</div>
+
+<script type="importmap">
+{"imports":{
+  "three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+const DATA = __DATA__;
+const MODELS = __MODELS__;
+const PHOTO = "__PHOTO__";
+
+const [W,H,D] = DATA.size;
+const GROUPS = [
+  {id:'shell', label:'Shell', match:p=>p.name.startsWith('shell')},
+  {id:'diffuser', label:'Diffuser', match:p=>p.name.startsWith('diffuser')},
+  {id:'cover', label:'Back covers', match:p=>p.name.startsWith('cover')},
+  {id:'hardware', label:'Clamps', match:p=>p.name.startsWith('screen_clip')||p.name==='stem_splice'||p.name==='audio_strap'||p.name.startsWith('pi_bracket')},
+  {id:'screen', label:'Screen', match:p=>p.name.startsWith('Screen')},
+  {id:'inside', label:'Electronics', match:p=>p.kind==='part'||p.kind==='led'},
+  {id:'wires', label:'Wires', match:()=>false},
+];
+const shown = Object.fromEntries(GROUPS.map(g=>[g.id,g.id!=='wires']));
+const STRIPS=['LED strip','LED chips'];
+const COVER_MOUNTED = ['Pi case bottom','Pi case top','Pi board','Pi connectors','Pi brass spacers','Cable plugs','Converter','USB audio dongle','Speaker plug','USB cable socket','Level shifter board','Level shifter parts','5V junction'];
+
+function explodeOffset(p){
+  const up=p.name.endsWith('upper')?18:p.name.endsWith('lower')?-18:0;
+  if(p.name.startsWith('diffuser')) return [0,up,90];
+  if(p.name.startsWith('shell')) return [0,up,30];
+  if(p.name.startsWith('cover')) return [0,up,-150];
+  if(p.name.startsWith('screen_clip')) return [0,0,-40];
+  if(p.name==='stem_splice') return [0,0,-20];
+  if(p.name==='audio_strap') return [0,0,-60];
+  if(p.name.startsWith('pi_bracket')) return [0,0,-70];
+  if(p.name.startsWith('Screen')) return [0,0,-14];
+  if(STRIPS.includes(p.name)) return [0,0,55];
+  if(p.name.startsWith('Speaker')) return [0,-8,-60];
+  if(p.name==='Power jack') return [0,-55,0];
+  if(COVER_MOUNTED.includes(p.name)) return [0,0,-100];
+  return [0,0,0];
+}
+
+{
+  const rows=DATA.wires.filter(w=>!w.name.startsWith('LED corner'));
+  const jumpers=DATA.wires.filter(w=>w.name.startsWith('LED corner'));
+  const tb=document.getElementById('bends');
+  for(const w of rows){
+    const tr=document.createElement('tr');
+    for(const [v,n] of [[w.name],[w.kind],[w.required.toFixed(1),1],[w.actual===null?'Straight':w.actual.toFixed(1),1],[w.length,1],[w.ok?'Pass':'Too tight']]){
+      const td=document.createElement('td');td.textContent=v;if(n)td.className='n';tr.append(td);
+    }
+    tb.append(tr);
+  }
+  const tightest=Math.min(...jumpers.map(w=>w.actual??99));
+  document.getElementById('bendNote').textContent=`The ${jumpers.length} LED corner jumpers use short, flexible wire with a ${jumpers[0].required.toFixed(1)} mm minimum. The tightest reaches ${tightest.toFixed(1)} mm. Minimums are planning rules: about 3 times the outer diameter for hookup wire and 4 times for USB cable. Check them against your actual cables.`;
+}
+const views=document.getElementById('views'), groupsEl=document.getElementById('groups');
+const VIEWS=[['front','Front'],['back','Back'],['inside','Inside'],['below','Below'],['speakers','Speakers'],['dongle','USB dongle'],['pi','Raspberry Pi'],['leds','LED strip'],['ledpower','LED power'],['screenback','Screen wiring'],['exploded','Exploded']];
+for(const [id,label] of VIEWS){const b=document.createElement('button');b.textContent=label;b.dataset.view=id;b.setAttribute('aria-pressed','false');views.append(b);}
+for(const g of GROUPS){const b=document.createElement('button');b.textContent=g.label;b.dataset.group=g.id;b.setAttribute('aria-pressed',String(shown[g.id]));groupsEl.append(b);}
+
+try{
+  const THREE=await import('three');
+  const {OrbitControls}=await import('three/addons/controls/OrbitControls.js');
+  const {STLLoader}=await import('three/addons/loaders/STLLoader.js');
+  const {mergeGeometries}=await import('three/addons/utils/BufferGeometryUtils.js');
+
+  const host=document.getElementById('viewer');
+  const renderer=new THREE.WebGLRenderer({antialias:true});
+  const SHARP=Math.min(devicePixelRatio||1,1.5);
+  renderer.setPixelRatio(SHARP);
+  renderer.shadowMap.enabled=true; renderer.shadowMap.type=THREE.PCFShadowMap; renderer.shadowMap.autoUpdate=false;
+  let dirty=true; const need=()=>{dirty=true;renderer.shadowMap.needsUpdate=true;}; const redraw=()=>{dirty=true;};
+  renderer.localClippingEnabled=true;
+  renderer.toneMapping=THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure=1.15;
+  host.append(renderer.domElement);
+
+  const scene=new THREE.Scene(); scene.background=new THREE.Color(0x45413b);
+  const camera=new THREE.PerspectiveCamera(30,1,10,8000);
+  const controls=new OrbitControls(camera,renderer.domElement);
+  controls.enableDamping=true; controls.minDistance=60; controls.maxDistance=3000; controls.zoomSpeed=.22; controls.addEventListener('change',redraw);
+  scene.add(new THREE.HemisphereLight(0xffffff,0x56504a,1.5));
+  const key=new THREE.DirectionalLight(0xfff4e6,2.2); key.position.set(250,650,700); key.castShadow=true; key.shadow.mapSize.set(1024,1024); Object.assign(key.shadow.camera,{left:-320,right:320,top:320,bottom:-320,near:100,far:1800}); key.shadow.bias=-.0006; scene.add(key);
+  const rear=new THREE.DirectionalLight(0xdfe8ff,1.6); rear.position.set(-300,300,-700); scene.add(rear);
+  const low=new THREE.DirectionalLight(0xffffff,1.1); low.position.set(100,-700,300); scene.add(low);
+
+  const clip=new THREE.Plane(new THREE.Vector3(0,0,-1),D+200);
+  const clips=[clip];
+  const mat={
+    body:new THREE.MeshStandardMaterial({color:0x34343a,roughness:.55,metalness:.05,side:THREE.DoubleSide,clippingPlanes:clips}),
+    diffuser:new THREE.MeshStandardMaterial({color:0xb8862f,emissive:0xff9a18,emissiveIntensity:.8,roughness:.5,side:THREE.DoubleSide,clippingPlanes:clips}),
+    part:new THREE.MeshStandardMaterial({color:0x4d7f76,roughness:.6,side:THREE.DoubleSide,clippingPlanes:clips}),
+    led:new THREE.MeshStandardMaterial({color:0xfff0c8,emissive:0xffa030,emissiveIntensity:1.2,side:THREE.DoubleSide,clippingPlanes:clips}),
+  };
+  const colors={'Screen':0x15161a,'Screen board':0x1f55b8,'Screen ports':0xb9bdc4,'Screen ribbon':0xc9a24a,'Screen plugs':0x34363c,'LED strip':0xf0ece2,'Pi case bottom':0x1d1e22,'Pi case top':0x26272c,'Pi board':0x1f7a4a,'Pi connectors':0xb9bdc4,'Pi brass spacers':0xc9a24a,'Converter':0x8c7a3a,'USB audio dongle':0x2b2d33,'Speaker plug':0xf0ece0,'USB cable socket':0x34363c,'Level shifter board':0x3f8a4e,'Level shifter parts':0x202226,'5V junction':0xc23b32,'Cable plugs':0x34363c,'Speaker left':0x3a3550,'Speaker right':0x3a3550,'Power jack':0xb0a89a};
+
+  const loader=new STLLoader();
+  const model=new THREE.Group(); model.position.set(-W/2,-H/2,-D/2); scene.add(model);
+  const items=[];
+  for(const p of DATA.parts){
+    const b64=MODELS[p.file]; const bin=Uint8Array.from(atob(b64),c=>c.charCodeAt(0));
+    const geo=loader.parse(bin.buffer); geo.computeVertexNormals();
+    let m=mat[p.kind==='diffuser'?'diffuser':p.kind==='body'?'body':p.kind==='led'?'led':'part'];
+    if(colors[p.name]!==undefined&&p.kind!=='led'||p.name==='LED strip'){m=mat.part.clone();m.color.set(colors[p.name]);m.clippingPlanes=clips;}
+    const mesh=new THREE.Mesh(geo,m); mesh.castShadow=mesh.receiveShadow=p.kind!=='diffuser'; model.add(mesh);
+    const g=GROUPS.find(x=>x.match(p));
+    items.push({p,mesh,obj:mesh,group:g.id,off:explodeOffset(p)});
+    if(p.name==='Screen'){
+      const tex=new THREE.TextureLoader().load(PHOTO,redraw); tex.colorSpace=THREE.SRGBColorSpace;
+      const pic=new THREE.Mesh(new THREE.PlaneGeometry(DATA.picture[3],DATA.picture[4]),new THREE.MeshBasicMaterial({map:tex,clippingPlanes:clips}));
+      pic.position.set(DATA.picture[0],DATA.picture[1],DATA.picture[2]); model.add(pic);
+      items.push({p:{name:'pic'},mesh:pic,obj:pic,group:'screen',off:explodeOffset(p),base:pic.position.clone()});
+    }
+  }
+  const wires=new THREE.Group(); model.add(wires);
+  const byColor={};
+  for(const w of DATA.wires){
+    for(const path of w.paths){
+      const curve=new THREE.CatmullRomCurve3(path.points.map(q=>new THREE.Vector3(...q)),false,'centripetal');
+      const route=w.name.startsWith('LED corner')?'LED corners':w.name;
+      const key=route+'|'+path.color;
+      (byColor[key]=byColor[key]||[]).push(new THREE.TubeGeometry(curve,Math.min(220,Math.max(10,path.points.length*2)),w.r,w.r>1.5?10:6,false));
+    }
+  }
+  const wireGroups={};
+  for(const [key,list] of Object.entries(byColor)){
+    const [route,color]=key.split('|');
+    const mesh=new THREE.Mesh(mergeGeometries(list),new THREE.MeshStandardMaterial({color,roughness:.45,clippingPlanes:clips}));
+    (wireGroups[route]=wireGroups[route]||[]).push(mesh);
+    wires.add(mesh);
+    list.forEach(g=>g.dispose());
+  }
+
+  let explode=0;
+  const BACK=new THREE.Vector3(.12,.1,-1), FRONT=new THREE.Vector3(.25,.12,1);
+  const hold=['cover_upper','pi_bracket_left','pi_bracket_low','pi_bracket_high','audio_strap','Pi case bottom','Pi case top','Pi board','Pi connectors','Pi brass spacers','Cable plugs','Converter','USB audio dongle','Speaker plug','USB cable socket','Level shifter board','Level shifter parts','5V junction'];
+  const inner=['5V converter to junction','5V to Pi','Pi GPIO to shifter','USB to dongle'];
+  const STEPS=[
+    {title:'Join the two shell sections',text:'Lay both shell sections face down on a soft cloth. Line up the stem joint and screw on the splice with 4 M3 × 10 mm screws.',
+     add:['shell_upper','shell_lower','stem_splice'],from:{stem_splice:[0,0,-90]},dir:BACK,dist:1.0,
+     tips:['Glue the joint too if you want it stronger. It also helps hide the seam line on the face.']},
+    {title:'Stick on the LED strip',text:'Turn the shell face up. Cut the strip into 12 sections and stick them to the channel wall, with the arrows all pointing the same way. Solder 3 jumpers across each of the 11 corners.',
+     add:['LED strip','LED chips'],from:{'LED strip':[0,0,70],'LED chips':[0,0,70]},wires:['LED corners'],dir:FRONT,dist:1.0,
+     tips:['Solder long leads to both strip ends and feed them through the two holes at the inside corner by the stem.','Test the strip now, before the diffuser goes on. The diffusers are glued, so this is the last easy chance to fix a joint.']},
+    {title:'Glue on the diffusers',text:'Fit both diffuser sections over the LED channel and glue them along the overlap.',
+     add:['diffuser_upper','diffuser_lower'],from:{diffuser_upper:[0,0,90],diffuser_lower:[0,0,90]},dir:FRONT,dist:1.0},
+    {title:'Fit the speakers',text:'Turn the shell face down again. Slide each speaker in from the back, with the drivers facing the grille and the front tabs under the pads. Then screw down the two rear tabs with M3 × 12 mm screws.',
+     add:['Speaker left','Speaker right'],from:{'Speaker left':[0,0,-90],'Speaker right':[0,0,-90]},dir:new THREE.Vector3(.1,.75,-1),dist:.72,focus:[201,190,0],
+     tips:['Do this before the screen. A short screwdriver can reach down inside while the space is empty.']},
+    {title:'Fit the power jack',text:'Push the jack through the hole in the bottom of the foot and tighten its nut from inside. Solder on the 12V leads, long enough to reach the converter.',
+     add:['Power jack'],from:{'Power jack':[0,-60,0]},dir:new THREE.Vector3(.3,-.5,-1),dist:.5,focus:[57,50,0]},
+    {title:'Fit the screen',text:'Set the screen in from the back, rotated 180° so its ports face down. Screw on the 4 corner clips with M3 × 8 mm screws.',
+     add:['Screen','Screen board','Screen ports','Screen ribbon','screen_clip_top_left','screen_clip_top_right','screen_clip_bottom_left','screen_clip_bottom_right'],
+     from:{Screen:[0,0,-90],'Screen board':[0,0,-90],'Screen ports':[0,0,-90],'Screen ribbon':[0,0,-90],screen_clip_top_left:[0,0,-50],screen_clip_top_right:[0,0,-50],screen_clip_bottom_left:[0,0,-50],screen_clip_bottom_right:[0,0,-50]},dir:BACK,dist:1.0,
+     tips:['Keep the screws at 8 mm. Longer ones can reach the front face.']},
+    {title:'Plug the cables into the screen',text:'Plug in the HDMI ribbon, the USB-C power lead and the right-angle touch cable. Leave their other ends loose for now.',
+     add:['Screen plugs'],from:{'Screen plugs':[0,-45,0]},dir:BACK,dist:.8,focus:[175,275,0],
+     tips:['The screen ports get covered later, so this is the only time they are easy to reach.','The back view shows the screen upside down. That is correct.']},
+    {title:'Build up the back cover on your bench',text:'With the cover on the bench, mount the Pi in its case, the converter, the 5V junction, the level shifter and the USB dongle. Wire everything that stays on the cover.',
+     add:hold,hold:true,only:true,from:Object.fromEntries(hold.map(n=>[n,[0,0,110]])),wires:inner,dir:new THREE.Vector3(.2,.15,1),dist:.75,focus:[195,270,-170],
+     tips:['This is your idea: everything mounts to the back first.','Fit the microSD card before the Pi goes in its case, or check that you can still reach its slot.','Finish every solder joint and tie down these wires now.']},
+    {title:'Connect the cover to the shell',text:'Stand the cover on its long bottom edge right behind the shell, close enough for the shortest cables to reach. Connect the cables between the two halves.',
+     add:[],hold:true,dir:new THREE.Vector3(1,.3,.1),dist:1.25,focus:[170,230,-60],
+     tips:['1. HDMI ribbon into the Pi. Connect this first, because it is the shortest.','2. Screen power and touch cable.','3. Speaker plug into the dongle.','4. LED 5V at both ends, LED data, and 12V to the converter.','The model shows solid parts, so it cannot show how the loose cables flex here. Try this step on the bench before printing the full sign.']},
+    {title:'Test it with the cover open',text:'Power it up before closing anything. Check the video, sound, touch and LEDs, then run vcgencmd get_throttled to confirm there are no low-voltage warnings.',
+     add:[],hold:true,dir:new THREE.Vector3(1,.3,.1),dist:1.25,focus:[170,230,-60]},
+    {title:'Fold the cover closed',text:'Unplug the power. Fold the cover closed, guiding the loose wires into the channels behind the screen and above the speakers. Check that nothing is pinched, then fit the lower cover and all the cover screws.',
+     add:['cover_lower'],from:{...Object.fromEntries(hold.map(n=>[n,[0,0,-170]])),cover_lower:[0,0,-170]},wires:['*'],dir:BACK,dist:1.0,
+     tips:['The wires appear here in their final positions.','Do not force the cover. If it will not seat, a wire is in the way.']},
+    {title:'Hang it on the wall',text:'Stick on the 4 felt pads, set 2 wall screws 201 mm apart, and hang the sign on its keyholes. Plug in the power cord at the foot.',
+     add:[],wires:['*'],dir:FRONT,dist:1.0},
+  ];
+  const step={on:false,i:0,t:1};
+  function renderStep(){
+    const s=STEPS[step.i], set=new Set(STEPS.slice(0,step.i+1).flatMap(x=>x.add));
+    const k=step.t*step.t*(3-2*step.t);
+    for(const it of items){
+      const n=it.p.name==='pic'?'Screen':it.p.name;
+      it.mesh.visible=set.has(n)&&(!s.only||hold.includes(n));
+      const b=it.base||new THREE.Vector3();
+      const held=s.hold&&hold.includes(n)?[0,0,-170]:[0,0,0];
+      const from=s.from&&s.from[n]?s.from[n]:[0,0,0];
+      const pending=s.add.includes(n)||(s.from&&s.from[n])?1-k:0;
+      it.mesh.position.set(b.x+held[0]+from[0]*pending,b.y+held[1]+from[1]*pending,b.z+held[2]+from[2]*pending);
+    }
+    wires.visible=true;
+    const open=step.t>=1?new Set(STEPS.slice(0,step.i+1).flatMap(x=>x.wires||[])):new Set(STEPS.slice(0,step.i).flatMap(x=>x.wires||[]));
+    for(const [route,list] of Object.entries(wireGroups)){
+      const all=open.has('*')&&step.t>=1;
+      const cover=inner.includes(route)&&s.hold;
+      list.forEach(m=>{m.visible=(all||open.has(route))&&(!s.only||inner.includes(route));m.position.set(0,0,cover?-170:0);});
+    }
+    need();
+  }
+  function showStep(i,instant){
+    step.on=true; step.i=Math.max(0,Math.min(STEPS.length-1,i)); step.t=instant||still?1:0;
+    const s=STEPS[step.i];
+    document.getElementById('stepPanel').hidden=false;
+    document.getElementById('groups').hidden=true;
+    document.getElementById('step-count').textContent=`Step ${step.i+1} of ${STEPS.length}`;
+    document.getElementById('step-title').textContent=s.title;
+    document.getElementById('step-text').textContent=s.text;
+    const ul=document.getElementById('step-tips'); ul.replaceChildren();
+    for(const tip of s.tips||[]){const li=document.createElement('li');li.textContent=tip;ul.append(li);}
+    ul.hidden=!(s.tips&&s.tips.length);
+    document.getElementById('step-prev').disabled=step.i===0;
+    document.getElementById('step-next').disabled=step.i===STEPS.length-1;
+    goal.focus=s.focus?[-W/2+s.focus[0],-H/2+s.focus[1],s.focus[2]||0]:[0,0,0];
+    fly(s.dir,Math.max(W,H)*2.5*s.dist,instant);
+    renderStep();
+  }
+  function apply(){
+    if(step.on){renderStep();return;}
+    Object.values(wireGroups).flat().forEach(m=>{m.visible=true;m.position.set(0,0,0);});
+    for(const it of items){
+      it.mesh.visible=shown[it.group];
+      const b=it.base||new THREE.Vector3();
+      it.mesh.position.set(b.x+it.off[0]*explode,b.y+it.off[1]*explode,b.z+it.off[2]*explode);
+    }
+    wires.visible=shown.wires&&explode<.02;
+    need();
+  }
+  const expEl=document.getElementById('explode'), cutEl=document.getElementById('cut');
+  expEl.oninput=()=>{explode=expEl.value/100;apply()};
+  cutEl.oninput=()=>{const t=cutEl.value/100; clip.constant=t>=.999?D+400:t*(D+2)-D/2;need();};
+
+  const goal={pos:new THREE.Vector3(),tgt:new THREE.Vector3(),on:false,focus:[0,0,0]};
+  const still=matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function fly(dir,dist,instant){
+    goal.tgt.set(...goal.focus); goal.pos.copy(dir).normalize().multiplyScalar(dist).add(goal.tgt);
+    if(instant||still){camera.position.copy(goal.pos);controls.target.copy(goal.tgt);goal.on=false;controls.update();}else goal.on=true;
+  }
+  controls.addEventListener('start',()=>{goal.on=false});
+
+  // Own wheel zoom: one notch moves about 4%, however the mouse or browser reports it.
+  const zoomTo={d:null};
+  const zoomBy=f=>{const cur=zoomTo.d??camera.position.distanceTo(controls.target);goal.on=false;zoomTo.d=Math.min(controls.maxDistance,Math.max(controls.minDistance,cur*f));};
+  host.addEventListener('wheel',e=>{
+    e.preventDefault();e.stopPropagation();
+    const unit=e.deltaMode===1?40:e.deltaMode===2?400:1;
+    zoomBy(Math.exp(Math.max(-120,Math.min(120,e.deltaY*unit))*.00033));
+  },{passive:false,capture:true});
+  const stepZoom=()=>{
+    if(zoomTo.d===null) return false;
+    const dir=camera.position.clone().sub(controls.target), cur=dir.length(), next=cur+(zoomTo.d-cur)*.25;
+    camera.position.copy(controls.target).add(dir.setLength(next));
+    if(Math.abs(zoomTo.d-cur)<.5) zoomTo.d=null;
+    return true;
+  };
+
+  function setGroups(next){
+    for(const g of GROUPS){shown[g.id]=next[g.id];document.querySelector(`[data-group="${g.id}"]`).setAttribute('aria-pressed',String(shown[g.id]));}
+    apply();
+  }
+  const base={shell:true,diffuser:true,cover:true,hardware:true,screen:true,inside:true,wires:false};
+  function setView(id,instant){
+    document.querySelectorAll('[data-view]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.view===id)));
+    const size=Math.max(W,H);
+    goal.focus=[0,0,0];
+    const building=id==='steps';
+    document.getElementById('mode-build').setAttribute('aria-pressed',String(building));
+    document.getElementById('mode-explore').setAttribute('aria-pressed',String(!building));
+    for(const el of ['views','explodeRow','cutRow']) document.getElementById(el).hidden=building;
+    if(building){explode=0;expEl.value=0;cutEl.value=100;clip.constant=D+400;showStep(step.i,instant);return;}
+    step.on=false;document.getElementById('stepPanel').hidden=true;document.getElementById('groups').hidden=false;
+    expEl.value=id==='exploded'?100:0; explode=expEl.value/100;
+    cutEl.value=100; clip.constant=D+400;
+    if(id==='front'){setGroups(base);fly(new THREE.Vector3(.28,.12,1),size*2.5,instant);}
+    if(id==='back'){setGroups(base);fly(new THREE.Vector3(.35,.1,-1),size*2.5,instant);}
+    if(id==='inside'){setGroups({...base,cover:false,wires:true});fly(new THREE.Vector3(.12,.1,-1),size*2.3,instant);}
+    if(id==='below'){setGroups(base);fly(new THREE.Vector3(.25,-1,.55),size*2.3,instant);}
+    if(id==='speakers'){setGroups({...base,cover:false,hardware:false,wires:true});goal.focus=[-W/2+201,-H/2+195,0];fly(new THREE.Vector3(.1,.75,-1),300,instant);}
+    if(id==='dongle'){setGroups({...base,shell:false,diffuser:false,wires:true});goal.focus=[-W/2+285,-H/2+290,0];fly(new THREE.Vector3(.2,.1,1),260,instant);}
+    if(id==='pi'){setGroups({...base,shell:false,diffuser:false,screen:false,wires:true});goal.focus=[-W/2+195,-H/2+272,-10];fly(new THREE.Vector3(.3,-.4,1),330,instant);}
+    if(id==='leds'){setGroups({...base,diffuser:false,wires:true});goal.focus=[-W/2+250,-H/2+350,D/2];fly(new THREE.Vector3(.7,.5,1),300,instant);}
+    if(id==='ledpower'){setGroups({...base,diffuser:false,screen:false,cover:false,inside:true,wires:true});goal.focus=[-W/2+85,-H/2+172,14];fly(new THREE.Vector3(.1,-.15,-1),210,instant);}
+    if(id==='screenback'){setGroups({...base,cover:false,diffuser:false,wires:true});goal.focus=[-W/2+170,-H/2+275,0];fly(new THREE.Vector3(-.15,-.1,-1),470,instant);}
+    if(id==='exploded'){setGroups(base);fly(new THREE.Vector3(1,.3,.72),size*3,instant);}
+  }
+  document.addEventListener('click',e=>{
+    const v=e.target.closest('[data-view]'); if(v) setView(v.dataset.view);
+    const g=e.target.closest('[data-group]');
+    if(g){shown[g.dataset.group]=!shown[g.dataset.group];g.setAttribute('aria-pressed',String(shown[g.dataset.group]));apply();}
+  });
+  const onLed=v=>{document.getElementById('led-on').setAttribute('aria-pressed',String(v));document.getElementById('led-off').setAttribute('aria-pressed',String(!v));mat.diffuser.emissiveIntensity=v?.8:0;mat.diffuser.color.set(v?0xb8862f:0xf4efe4);mat.led.emissiveIntensity=v?1.2:0;redraw();};
+  document.getElementById('mode-build').onclick=()=>setView('steps');
+  document.getElementById('mode-explore').onclick=()=>setView('front');
+  document.getElementById('step-prev').onclick=()=>showStep(step.i-1);
+  document.getElementById('step-next').onclick=()=>showStep(step.i+1);
+  document.getElementById('zoom-in').onclick=()=>zoomBy(.85);
+  document.getElementById('zoom-out').onclick=()=>zoomBy(1/.85);
+  document.getElementById('led-on').onclick=()=>onLed(true);
+  document.getElementById('led-off').onclick=()=>onLed(false);
+
+  function resize(){const w=host.clientWidth,h=host.clientHeight;renderer.setSize(w,h,false);camera.aspect=w/h;camera.updateProjectionMatrix();need();}
+  let idle;controls.addEventListener('start',()=>{clearTimeout(idle);renderer.setPixelRatio(1);resize();});controls.addEventListener('end',()=>{idle=setTimeout(()=>{renderer.setPixelRatio(SHARP);resize();},250);});
+  document.getElementById('fail').remove();
+  new ResizeObserver(resize).observe(host); resize();
+  const wanted=location.hash.slice(1).split('-');
+  if(wanted[0]==='steps') step.i=(+wanted[1]||1)-1;
+  const start=wanted[0]==='steps'||VIEWS.map(v=>v[0]).includes(wanted[0])?wanted[0]:'front';
+  setView(start,true);
+  renderer.setAnimationLoop(()=>{
+    if(goal.on){camera.position.lerp(goal.pos,.09);controls.target.lerp(goal.tgt,.09);if(camera.position.distanceTo(goal.pos)<3)goal.on=false;dirty=true;}
+    if(stepZoom()) dirty=true;
+    if(step.on&&step.t<1){step.t=Math.min(1,step.t+.025);renderStep();}
+    controls.update();if(dirty){dirty=false;renderer.render(scene,camera);}
+  });
+}catch(err){
+  document.getElementById('fail').textContent='The 3D view could not start in this browser. The build notes below still apply.';
+  console.error(err);
+}
+</script>
