@@ -164,8 +164,8 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <li><strong>Speakers:</strong> Two rear screws and two front hooks hold each one. The grille sits about 9 mm below the speaker face, and a 16 mm gap between the speakers gives their cables room.</li>
         <li><strong>Raspberry Pi:</strong> The N300 case has no mounting holes underneath, so three printed brackets hold it from its top spacers, with corner stops around the case. Its fins face the back cover vents.</li>
         <li><strong>USB dongle:</strong> It has no mounting holes, so a low cradle and screwed strap hold it, with its 4-pin header facing the speakers.</li>
-        <li><strong>LEDs:</strong> 71 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
-        <li><strong>Cooling:</strong> Air enters through slots beside the stem, rises past the Pi and exits through the top wall.</li>
+        <li><strong>LEDs:</strong> 72 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
+        <li><strong>Cooling:</strong> Cool air enters low, through the bottom of the foot, the stem walls, the underside and the lower right wall. It rises past the electronics and leaves through the top wall and upper side walls, so the airflow doesn't depend on the gap behind the sign.</li>
         <li><strong>Servicing:</strong> The covers come off with screws, so the wiring stays reachable. The diffusers are glued on.</li>
       </ul>
     </div>
@@ -194,7 +194,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <li>10 small zip ties, 3.6 mm wide or narrower, for the 10 clips on the back cover</li>
         <li>2 wall screws with heads under 9 mm, shafts under 5 mm</li>
         <li>Thin wire for 33 corner jumper wires, 3 at each of 11 corners. Stranded 24 AWG or thinner bends best</li>
-        <li>4 stick-on felt pads, to hold the back about 3 mm off the wall</li>
+        <li>4 stick-on rubber bumpers, about 8 mm tall, to hold the back off the wall</li>
         <li>CA glue for the diffusers, plus thin foam tape for the dongle strap</li>
       </ul>
     </div>
@@ -382,7 +382,7 @@ try{
     {title:'Fold the cover closed',text:'Unplug the power. Fold the cover closed, guiding the loose wires into the channels behind the screen and above the speakers. Check that nothing is pinched, then fit the lower cover and all the cover screws.',
      add:['cover_lower'],from:{...Object.fromEntries(hold.map(n=>[n,[0,0,-170]])),cover_lower:[0,0,-170]},wires:['*'],dir:BACK,dist:1.0,
      tips:['The wires appear here in their final positions.','Do not force the cover. If it will not seat, a wire is in the way.']},
-    {title:'Hang it on the wall',text:'Stick on the 4 felt pads, set 2 wall screws 201 mm apart, and hang the sign on its keyholes. Plug in the power cord at the foot.',
+    {title:'Hang it on the wall',text:'Stick on the 4 rubber bumpers, set 2 wall screws 201 mm apart, and hang the sign on its keyholes. Plug in the power cord at the foot.',
      add:[],wires:['*'],dir:FRONT,dist:1.0},
   ];
   const step={on:false,i:0,t:1};

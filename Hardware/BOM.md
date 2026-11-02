@@ -38,7 +38,7 @@ Needed for the current CAD model, if you don't already have them.
 - 4 M2.5 x 6 mm screws (the Pi case kit includes its own screws and spacers)
 - 10 small zip ties, 3.6 mm wide or narrower
 - 2 wall screws with heads under 9 mm and shafts under 5 mm
-- 4 stick-on felt pads
+- 4 stick-on rubber bumpers, about 8 mm tall
 - CA glue and thin foam tape
 - Thin wire for 33 corner jumper wires
 

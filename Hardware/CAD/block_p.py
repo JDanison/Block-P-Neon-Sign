@@ -24,8 +24,14 @@ OUT = pathlib.Path(__file__).parent
 
 # Locked shape, in marcher grid spots
 UNIT = 12.6               # raised from 11.9 to open clearances
-SHAPE = [(0, 0), (9, 0), (9, 4), (6.5, 4), (6.5, 13), (25.5, 13), (25.5, 31), (0, 31),
-         (0, 27), (2.5, 27), (2.5, 4), (0, 4)]
+STEM_WIDEN = 10.0         # added to the stem, half on each side, the width of the gold edge
+STEM_L = 2.5 - STEM_WIDEN / 2 / UNIT
+STEM_R = 6.5 + STEM_WIDEN / 2 / UNIT
+FOOT_L = -STEM_WIDEN / 2 / UNIT      # the foot grows by the same margin, staying centered on the stem
+FOOT_R = 9 + STEM_WIDEN / 2 / UNIT
+FOOT_T = (FOOT_R - FOOT_L) * 4 / 9   # keeps the drill chart's 9:4 foot proportion
+SHAPE = [(FOOT_L, 0), (FOOT_R, 0), (FOOT_R, FOOT_T), (STEM_R, FOOT_T), (STEM_R, 13), (25.5, 13), (25.5, 31), (0, 31),
+         (0, 27), (STEM_L, 27), (STEM_L, FOOT_T), (FOOT_L, FOOT_T)]
 
 # Enclosure
 DEPTH = 55.0              # set by the speakers' 45 mm width and 1.5 mm clearance
@@ -125,10 +131,10 @@ def union(parts):
 
 O = [(x * UNIT, y * UNIT) for x, y in SHAPE]
 W_TOTAL, H_TOTAL = 25.5 * UNIT, 31 * UNIT
-SCREEN_X, SCREEN_Y = 14 * UNIT, 22 * UNIT
+SCREEN_X, SCREEN_Y = (STEM_L * UNIT + W_TOTAL) / 2, 22 * UNIT
 BAND_Y = 13 * UNIT        # underside of the band below the screen
 FOOT_W, FOOT_H = 9 * UNIT, 4 * UNIT
-STEM_X0, STEM_X1 = 2.5 * UNIT, 6.5 * UNIT
+STEM_X0, STEM_X1 = STEM_L * UNIT, STEM_R * UNIT
 
 PANEL_Z0 = DEPTH - FRONT - PANEL_T
 PANEL_X0, PANEL_X1 = SCREEN_X - PANEL_W / 2, SCREEN_X + PANEL_W / 2
@@ -156,9 +162,9 @@ SPLICE_Z1 = DEPTH - FRONT - SPLICE_BOSS
 
 SCALE = UNIT / 11.9
 SCREWS_UPPER = [(8 * SCALE, 361 * SCALE), (150 * SCALE, 361 * SCALE), (295 * SCALE, 361 * SCALE), (8.5, 346.5),
-                (38, 307), (38, 238), (38, 175), (38, 119), (75, 119), (75, 155),
+                (33, 307), (33, 238), (33, 175), (33, 119), (80, 119), (80, 155),
                 (314.5, 317), (316.0, 243.5), (315.5, 169), (201, 169)]
-SCREWS_LOWER = [(38, 104), (75, 104), (38, 57), (75, 57), (8.5, 8.5), (105, 8.5), (8.5, 42), (105, 42)]
+SCREWS_LOWER = [(33, 104), (80, 104), (33, 57), (80, 57), (3.5, 8.5), (110, 8.5), (3.5, 42), (110, 42)]
 KEYHOLES = [(75.0, 370.0), (276.0, 370.0)]
 PI_Z0 = COVER
 PI_BOARD_Z = PI_Z0 + CASE_PCB_Z + PI_BOARD_T   # top of the board
@@ -167,6 +173,79 @@ PI_BRACKET_T = 3.0
 PI_HOLES = [(PI_X + x, PI_Y + y) for x in PI_HOLE_X for y in PI_HOLE_Y]
 PI_POSTS = [(PI_X - 9, PI_Y + 3.5), (PI_X - 9, PI_Y + 52.5), (PI_X + 61.5, PI_Y - 9), (PI_X + 61.5, PI_Y + 65)]
 PERF_POSTS = [(PERF_X + dx, PERF_Y + dy) for dx in (3, PERF_S - 3) for dy in (3, PERF_S - 3)]
+
+
+# Natural airflow: cool air in low, warm air out high. Slots stay clear of the LED channel.
+VENT_W = 5.0
+VENT_Z0, VENT_Z1 = 8.0, 34.0
+
+
+def vent_slots():
+    """Returns (position, wall) for every vent. Wall is top, right, left or under."""
+    screw_x = [q[0] for q in SCREWS_UPPER if q[1] > H_TOTAL - 20]
+    right_y = [q[1] for q in SCREWS_UPPER if q[0] > W_TOTAL - 12]
+    left_y = [q[1] for q in SCREWS_UPPER if 28 < q[0] < 45]
+    slots = {"top": [], "right_high": [], "right_low": [], "left": [], "under": [], "foot": [], "stem_left": [], "stem_right": []}
+    x = 60.0
+    while x < W_TOTAL - 20:
+        if all(abs(x - c) > 8 for c in screw_x):
+            slots["top"].append(x)
+        x += 10
+    y = BAND_Y + 12
+    while y < H_TOTAL - 16:
+        if all(abs(y - c) > 8 for c in right_y):
+            slots["right_low" if y < 262 else "right_high"].append(y)
+        y += 10
+    y = 182.0
+    while y < 330:
+        if all(abs(y - c) > 8 for c in left_y):
+            slots["left"].append(y)
+        y += 10
+    slots["under"] = [90.0, 95.0, 196.0, 206.0]
+    slots["foot"] = [x for x in (18.0, 26.0, 34.0, 42.0, 72.0, 80.0, 88.0, 96.0)]
+    lower = [q[1] for q in SCREWS_LOWER + SCREWS_UPPER]
+    y = 62.0
+    while y < 158:
+        if abs(y - SPLIT_SHELL) > 8 and all(abs(y - c) > 8 for c in lower):
+            slots["stem_left"].append(y)
+            slots["stem_right"].append(y)
+        y += 10
+    return slots
+
+
+def vent_cuts():
+    cuts = []
+    slots = vent_slots()
+    half = VENT_W / 2
+    for x in slots["top"]:
+        cuts.append(box(x - half, x + half, H_TOTAL - WALL - 1, H_TOTAL + 1, VENT_Z0, VENT_Z1))
+    for y in slots["right_low"] + slots["right_high"]:
+        cuts.append(box(W_TOTAL - WALL - 1, W_TOTAL + 1, y - half, y + half, VENT_Z0, VENT_Z1))
+    for y in slots["left"]:
+        cuts.append(box(STEM_X0 - 1, STEM_X0 + WALL + 1, y - half, y + half, VENT_Z0, VENT_Z1))
+    for y in slots["stem_left"]:
+        cuts.append(box(STEM_X0 - 1, STEM_X0 + WALL + 1, y - half, y + half, VENT_Z0, VENT_Z1))
+    for y in slots["stem_right"]:
+        cuts.append(box(STEM_X1 - WALL - 1, STEM_X1 + 1, y - half, y + half, VENT_Z0, VENT_Z1))
+    for x in slots["foot"]:
+        cuts.append(box(x - half, x + half, -1, WALL + 1, VENT_Z0, VENT_Z1))
+    for x in slots["under"]:
+        cuts.append(box(x - 1.5, x + 1.5, BAND_Y - 1, BAND_Y + WALL + 1, 10, 36))
+    return cuts
+
+
+def vent_report():
+    """Compares vent area with the area needed for natural airflow to carry the heat away."""
+    slots = vent_slots()
+    area = (VENT_Z1 - VENT_Z0) * VENT_W
+    low = len(slots["right_low"]) + len(slots["foot"]) + len(slots["stem_left"]) + len(slots["stem_right"])
+    inlet = low * area + len(slots["under"]) * 3 * 26
+    outlet = (len(slots["top"]) + len(slots["right_high"]) + len(slots["left"])) * area
+    effective = 1 / (1 / inlet ** 2 + 1 / outlet ** 2) ** 0.5 / 1e6
+    heat, height = 13.0, 0.25      # W inside the cavity, and m of rise from inlets to outlets. The LEDs have their own channel
+    rise = (heat / (1.2 * 1005 * 0.6 * effective * (2 * 9.8 * height / 300) ** 0.5)) ** (2 / 3)
+    print(f"  {sum(len(v) for v in slots.values())} slots: {inlet:.0f} mm2 in, {outlet:.0f} mm2 out")
+    print(f"  Estimated air temperature rise from airflow alone: {rise:.0f} C")
 
 
 def front_shell():
@@ -207,13 +286,7 @@ def front_shell():
             x = cx - 40 + i * 8
             holes.append(box(x - 1.7, x + 1.7, BAND_Y - 1, BAND_Y + WALL + 1, SPK_ZC - 15, SPK_ZC + 15))
 
-    # Vents: cool air in beside the stem, warm air out through the top wall
-    for x in (87.0, 92.0):
-        holes.append(box(x - 1.5, x + 1.5, BAND_Y - 1, BAND_Y + WALL + 1, 10, 36))
-    for i in range(10):
-        x = 98 + i * 16
-        if abs(x - 158.8) > 8:
-            holes.append(box(x - 2, x + 2, H_TOTAL - WALL - 1, H_TOTAL + 1, 8, 34))
+    holes += vent_cuts()
 
     # Power jack through the bottom of the foot
     holes.append(Pos(FOOT_W / 2, 0, 21) * Rot(90, 0, 0) * Cylinder(JACK_D / 2, 14))
@@ -653,7 +726,7 @@ def led_runs():
     """One strip section per straight wall, stopping short of each corner for the jumpers."""
     wall = inset(O, LED_STEP)
     n = len(wall)
-    start = next(i for i, q in enumerate(O) if q == (6.5 * UNIT, 13 * UNIT))
+    start = next(i for i, q in enumerate(O) if q == (STEM_R * UNIT, 13 * UNIT))
     runs = []
     for k in range(n):
         i = (start + k) % n
@@ -698,7 +771,7 @@ def led_jumpers():
         lift = 1.0
         corner = (cx + (a[3][0] + b[3][0]) * lift, cy + (a[3][1] + b[3][1]) * lift, a[0][2])
         routes.append(build_route(dict(
-            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=1.2, bend=3.5, kind="Jumper wire", pitch=3.2, lead=1,
+            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=1.2, bend=3.5, kind="Jumper wire", pitch=3.2, lead=0.2,
             start=(a[1], a[2], z_axis), end=(b[0], tuple(-c for c in b[2]), z_axis), via=[corner], check=False)))
     return routes
 
@@ -1006,6 +1079,9 @@ def main():
                 print(f"  {part} hits {other}: {volume:.0f} mm3")
                 problems += 1
     print(f"  {problems} collisions")
+
+    print("\nVent check")
+    vent_report()
 
     print("\nFront face check")
     front_face_check(printed["shell_upper"], printed["shell_lower"])

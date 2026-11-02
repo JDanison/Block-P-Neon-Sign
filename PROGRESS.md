@@ -31,7 +31,7 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 | Print | Black body, translucent white LED diffuser |
 | Speakers | Your QCCAN 8 ohm 5W speakers (about 100 x 45 x 21 mm, holes 92 x 36 mm), mounted under the screen and firing down |
 | Printer | Bambu H2C, with the sign printed in two main sections |
-| LEDs | Your own 5V WS2812B strip, modeled as standard 10 mm 60 LED/m until confirmed. 71 LEDs in 12 sections with 11 soldered corner jumpers. Mostly solid gold or off |
+| LEDs | Your own 5V WS2812B strip, modeled as standard 10 mm 60 LED/m until confirmed. 72 LEDs in 12 sections with 11 soldered corner jumpers. Mostly solid gold or off |
 | Power | 12V 5A adapter into a 10A 5V converter, with separate 5V branches for the Pi, screen and LEDs |
 | Fuses | No 12V fuse. A 5A fuse on the LED branch is optional and recommended |
 | Software | One Python service on the Pi that runs the LEDs, plays media with `mpv` and serves a React control page |
@@ -41,8 +41,8 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 
 Grid units, with x to the right and y up from the foot's lower left corner. The 8" build uses 12.6 mm per unit.
 
-- **Outline:** (0,0) (9,0) (9,4) (6.5,4) (6.5,13) (25.5,13) (25.5,31) (0,31) (0,27) (2.5,27) (2.5,4) (0,4)
-- **Screen opening:** x 6 to 22, y 16 to 28
+- **Outline:** (-0.4,0) (9.4,0) (9.4,4.35) (6.9,4.35) (6.9,13) (25.5,13) (25.5,31) (0,31) (0,27) (2.1,27) (2.1,4.35) (-0.4,4.35). The stem and foot are each 10 mm wider than the drill chart version, and the foot keeps the chart's 9:4 proportion
+- **Screen opening:** 16 by 12 units, centered between the stem's left edge and the right edge. Its top and bottom sit at y 16 and 28
 
 ## Status
 
