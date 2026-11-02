@@ -24,14 +24,13 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 | Item | Decision |
 |---|---|
 | Shape | Locked. Taken from the drill chart, then adjusted by hand |
-| Sign scale | 12.6 mm per grid unit, raised from 11.9 for clearance. The shape and proportions are unchanged |
 | Screen location | Fills the opening of the P |
 | Screen | Waveshare 8DP-CAPLCD, 8", 1280 x 800, 194 x 119 x 5 mm (11 mm with its board). Mounted rotated 180 degrees with 4 corner clips, and rotated back in software |
-| Sign size | About 15.4 x 12.6 x 2.2 in (391 x 321 x 55 mm). The renders page still shows the earlier 14.5 in size |
+| Sign size | About 15.1 x 12.7 x 2.2 in (383 x 323 x 55 mm). The renders page still shows an earlier size |
 | Print | Black body, translucent white LED diffuser |
 | Speakers | Your QCCAN 8 ohm 5W speakers (about 100 x 45 x 21 mm, holes 92 x 36 mm), mounted under the screen and firing down |
 | Printer | Bambu H2C, with the sign printed in two main sections |
-| LEDs | Your own 5V WS2812B strip, modeled as standard 10 mm 60 LED/m until confirmed. 72 LEDs in 12 sections with 11 soldered corner jumpers. Mostly solid gold or off |
+| LEDs | Your own 5V WS2812B strip, modeled as standard 10 mm 60 LED/m until confirmed. 68 LEDs in 12 sections with 11 soldered corner jumpers. Mostly solid gold or off |
 | Power | 12V 5A adapter into a 10A 5V converter, with separate 5V branches for the Pi, screen and LEDs |
 | Fuses | No 12V fuse. A 5A fuse on the LED branch is optional and recommended |
 | Software | One Python service on the Pi that runs the LEDs, plays media with `mpv` and serves a React control page |
@@ -39,10 +38,12 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 
 ## Locked shape
 
-Grid units, with x to the right and y up from the foot's lower left corner. The 8" build uses 12.6 mm per unit.
+Proportions come from the band's formation, counted in people. One person is 14.33 mm of visible black, a size set by the H2C's 325 mm bed. `Hardware/CAD/block_p.py` checks these on every rebuild.
 
-- **Outline:** (-0.4,0) (9.4,0) (9.4,4.35) (6.9,4.35) (6.9,13) (25.5,13) (25.5,31) (0,31) (0,27) (2.1,27) (2.1,4.35) (-0.4,4.35). The stem and foot are each 10 mm wider than the drill chart version, and the foot keeps the chart's 9:4 proportion
-- **Screen opening:** 16 by 12 units, centered between the stem's left edge and the right edge. Its top and bottom sit at y 16 and 28
+- **Stem:** 3 people wide
+- **Base:** 7 people wide by 3 people tall, so it sticks out 2 people on each side of the stem
+- **Top-left block:** 3 people tall, and 2 people past the stem, lined up with the left edge of the base
+- **Screen border:** 3 people on the top, bottom, left and right
 
 ## Status
 
@@ -63,7 +64,7 @@ Grid units, with x to the right and y up from the foot's lower left corner. The 
 
 1. Order the parts in `Hardware/BOM.md`. Wait on the flat HDMI cable until CAD confirms its direction.
 2. Set up SSH key access to the Pi, then change the default password. It's also written in the repo notes.
-3. Print the two test corners in `Hardware/CAD/print/test_pieces` to check the diffuser.
+3. Print the test pieces in `Hardware/CAD/print/test_pieces` to check the diffuser and screw hole size.
 4. Measure the speakers and USB dongle you already have. When the other parts arrive, measure them against the list on the CAD viewer page, then update the model.
 5. Send the list of YouTube show links by year, plus any photos.
 6. Test everything together on the bench, including connecting the cover and folding it closed before printing the full sign.

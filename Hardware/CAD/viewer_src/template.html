@@ -54,7 +54,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
 <div class="wrap">
   <header class="stack">
     <h1>Block P CAD</h1>
-    <p>The 8" build for the Bambu H2C, about 15.4 × 12.6 × 2.2 in. Pick <strong>Build guide</strong> above the model to see the assembly order. The LED strip is modeled as a standard 10 mm WS2812B until you confirm yours, and some other sizes are estimates until your parts arrive. Drag to rotate, scroll or use + and − to zoom, and right-drag to move.</p>
+    <p>The 8" build for the Bambu H2C, about 15.1 × 12.7 × 2.2 in. Pick <strong>Build guide</strong> above the model to see the assembly order. The LED strip is modeled as a standard 10 mm WS2812B until you confirm yours, and some other sizes are estimates until your parts arrive. Drag to rotate, scroll or use + and − to zoom, and right-drag to move.</p>
   </header>
 
   <section class="stack">
@@ -139,7 +139,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <tr><td><code>pi_bracket_left</code>, <code>pi_bracket_low</code>, <code>pi_bracket_high</code></td><td>Black</td><td>3 mm thick</td><td>Hold the Pi case by its top screw positions</td></tr>
       </tbody>
     </table></div>
-    <p class="note">Every piece fits the H2C, but the two upper sections are 321 mm wide, so print those on the left nozzle only, where the bed is 325 mm wide. The print files are already laid flat, and the whole sign uses up to about 910 g of filament at full infill, so far less at normal settings. Print the two test corners in <code>print/test_pieces</code> first to check the diffuser fit and glow. For the smoothest face, print the shells face down on a smooth PEI plate.</p>
+    <p class="note">Every piece fits the H2C, but the two upper sections are 321 mm wide, so print those on the left nozzle only, where the bed is 325 mm wide. The print files are already laid flat, and the whole sign uses up to about 910 g of filament at full infill, so far less at normal settings. Print the three test pieces in <code>print/test_pieces</code> first to check the diffuser fit, glow and screw hole size. For the smoothest face, print the shells face down on a smooth PEI plate.</p>
   </section>
 
   <section class="two">
@@ -147,7 +147,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
       <h2>How it goes together</h2>
       <ol>
         <li>Cut the strip into 12 sections, one for each straight wall, and stick them to the channel wall. Solder short 3-wire jumpers across the 11 corners, following the arrows on the strip. The two ends finish at the wire holes beside the stem.</li>
-        <li>Join the shell sections with the stem splice and 4 M3 screws, then glue on the diffusers.</li>
+        <li>Join the shell sections with the stem splice and 4 M3 screws, and glue on the diffusers.</li>
         <li>Hook each speaker's two front tabs under the pads, drivers facing the grille, then lower it onto the two rear posts and fit 2 M3 × 12 mm screws. Run a screwdriver in along the inside with the cover off. Do this before fitting the screen.</li>
         <li>Set the screen in from behind, rotated 180° so its ports face down, and screw on the 4 corner clips. The picture is flipped back in software.</li>
         <li>Assemble the Pi in its case, using the kit's extra brass spacers on top. Set it in its corner stops on the upper cover and fit the three brackets. Add the converter and level shifter. Set the USB dongle in its cradle, screw the strap over it, and connect it to the Pi with its short USB cable. Then route and zip-tie the wires.</li>
@@ -164,7 +164,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <li><strong>Speakers:</strong> Two rear screws and two front hooks hold each one. The grille sits about 9 mm below the speaker face, and a 16 mm gap between the speakers gives their cables room.</li>
         <li><strong>Raspberry Pi:</strong> The N300 case has no mounting holes underneath, so three printed brackets hold it from its top spacers, with corner stops around the case. Its fins face the back cover vents.</li>
         <li><strong>USB dongle:</strong> It has no mounting holes, so a low cradle and screwed strap hold it, with its 4-pin header facing the speakers.</li>
-        <li><strong>LEDs:</strong> 72 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
+        <li><strong>LEDs:</strong> 68 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
         <li><strong>Cooling:</strong> Cool air enters low, through the bottom of the foot, the stem walls, the underside and the lower right wall. It rises past the electronics and leaves through the top wall and upper side walls, so the airflow doesn't depend on the gap behind the sign.</li>
         <li><strong>Servicing:</strong> The covers come off with screws, so the wiring stays reachable. The diffusers are glued on.</li>
       </ul>
@@ -187,13 +187,10 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
     <div class="stack">
       <h2>Small hardware</h2>
       <ul>
-        <li>32 M3 × 10 mm self-tapping screws: 22 for the covers, 4 for the splice, 2 for the dongle strap and 4 for the Pi brackets</li>
-        <li>4 M3 × 8 mm self-tapping screws for the screen clips. Don't go longer, or they will reach the front face</li>
-        <li>4 M3 × 12 mm self-tapping screws, for the speakers</li>
-        <li>4 M2.5 × 6 mm screws, for the level shifter board. The Pi case kit includes its own M2.5 screws and spacers</li>
+        <li>44 M3 × 10 mm self-tapping screws, the only screw size in the sign</li>
         <li>10 small zip ties, 3.6 mm wide or narrower, for the 10 clips on the back cover</li>
         <li>2 wall screws with heads under 9 mm, shafts under 5 mm</li>
-        <li>Thin wire for 33 corner jumper wires, 3 at each of 11 corners. Stranded 24 AWG or thinner bends best</li>
+        <li>Thin wire for 33 corner jumper wires, 3 at each of 11 corners. Stranded 24 AWG or thinner bends best, and the tight corner under the top-left notch needs 28 AWG</li>
         <li>4 stick-on rubber bumpers, about 8 mm tall, to hold the back off the wall</li>
         <li>CA glue for the diffusers, plus thin foam tape for the dongle strap</li>
       </ul>
@@ -359,15 +356,15 @@ try{
      tips:['Solder long leads to both strip ends and feed them through the two holes at the inside corner by the stem.','Test the strip now, before the diffuser goes on. The diffusers are glued, so this is the last easy chance to fix a joint.']},
     {title:'Glue on the diffusers',text:'Fit both diffuser sections over the LED channel and glue them along the overlap.',
      add:['diffuser_upper','diffuser_lower'],from:{diffuser_upper:[0,0,90],diffuser_lower:[0,0,90]},dir:FRONT,dist:1.0},
-    {title:'Fit the speakers',text:'Turn the shell face down again. Slide each speaker in from the back, with the drivers facing the grille and the front tabs under the pads. Then screw down the two rear tabs with M3 × 12 mm screws.',
+    {title:'Fit the speakers',text:'Turn the shell face down again. Slide each speaker in from the back, with the drivers facing the grille and the front tabs under the pads. Then screw down the two rear tabs with M3 × 10 mm screws.',
      add:['Speaker left','Speaker right'],from:{'Speaker left':[0,0,-90],'Speaker right':[0,0,-90]},dir:new THREE.Vector3(.1,.75,-1),dist:.72,focus:[201,190,0],
      tips:['Do this before the screen. A short screwdriver can reach down inside while the space is empty.']},
     {title:'Fit the power jack',text:'Push the jack through the hole in the bottom of the foot and tighten its nut from inside. Solder on the 12V leads, long enough to reach the converter.',
      add:['Power jack'],from:{'Power jack':[0,-60,0]},dir:new THREE.Vector3(.3,-.5,-1),dist:.5,focus:[57,50,0]},
-    {title:'Fit the screen',text:'Set the screen in from the back, rotated 180° so its ports face down. Screw on the 4 corner clips with M3 × 8 mm screws.',
+    {title:'Fit the screen',text:'Set the screen in from the back, rotated 180° so its ports face down. Screw on the 4 corner clips with M3 × 10 mm screws.',
      add:['Screen','Screen board','Screen ports','Screen ribbon','screen_clip_top_left','screen_clip_top_right','screen_clip_bottom_left','screen_clip_bottom_right'],
      from:{Screen:[0,0,-90],'Screen board':[0,0,-90],'Screen ports':[0,0,-90],'Screen ribbon':[0,0,-90],screen_clip_top_left:[0,0,-50],screen_clip_top_right:[0,0,-50],screen_clip_bottom_left:[0,0,-50],screen_clip_bottom_right:[0,0,-50]},dir:BACK,dist:1.0,
-     tips:['Keep the screws at 8 mm. Longer ones can reach the front face.']},
+     tips:['Tighten by hand until snug. Every screw threads straight into the plastic.']},
     {title:'Plug the cables into the screen',text:'Plug in the HDMI ribbon, the USB-C power lead and the right-angle touch cable. Leave their other ends loose for now.',
      add:['Screen plugs'],from:{'Screen plugs':[0,-45,0]},dir:BACK,dist:.8,focus:[175,275,0],
      tips:['The screen ports get covered later, so this is the only time they are easy to reach.','The back view shows the screen upside down. That is correct.']},

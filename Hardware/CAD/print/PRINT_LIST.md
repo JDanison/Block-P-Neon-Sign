@@ -10,6 +10,7 @@ The model still uses estimated sizes for several parts, so print the test pieces
 |---|---|
 | `BLACK_test_body_corner.stl` | Black |
 | `WHITE_test_diffuser_corner.stl` | Translucent white |
+| `BLACK_test_screw_holes.stl` | Black. Its three holes are 2.6, 2.7 and 2.8 mm, left to right. Try a screw in each to find the best fit |
 
 ## Black filament: `black`
 

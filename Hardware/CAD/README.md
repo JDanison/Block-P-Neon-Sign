@@ -12,7 +12,7 @@ Drag the STL files into Bambu Studio. They're already laid flat, and every filen
 
 - `print/black`: 13 files, for black filament
 - `print/white`: 2 files, for translucent white filament
-- `print/test_pieces`: print these 2 first to check the diffuser fit and glow
+- `print/test_pieces`: print these 3 first to check the diffuser fit, glow and screw hole size
 
 ## Files
 

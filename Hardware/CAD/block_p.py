@@ -23,23 +23,27 @@ from build123d import Axis, Box, Compound, Cylinder, Polygon, Pos, Plane, Rot, S
 OUT = pathlib.Path(__file__).parent
 
 # Locked shape, in marcher grid spots
-UNIT = 12.6               # raised from 11.9 to open clearances
-STEM_WIDEN = 10.0         # added to the stem, half on each side, the width of the gold edge
-STEM_L = 2.5 - STEM_WIDEN / 2 / UNIT
-STEM_R = 6.5 + STEM_WIDEN / 2 / UNIT
-FOOT_L = -STEM_WIDEN / 2 / UNIT      # the foot grows by the same margin, staying centered on the stem
-FOOT_R = 9 + STEM_WIDEN / 2 / UNIT
-FOOT_T = (FOOT_R - FOOT_L) * 4 / 9   # keeps the drill chart's 9:4 foot proportion
-SHAPE = [(FOOT_L, 0), (FOOT_R, 0), (FOOT_R, FOOT_T), (STEM_R, FOOT_T), (STEM_R, 13), (25.5, 13), (25.5, 31), (0, 31),
-         (0, 27), (STEM_L, 27), (STEM_L, FOOT_T), (FOOT_L, FOOT_T)]
+PERSON = 43.0 / 3         # one marcher, in visible black mm. Set by the 325 mm printer bed
+BLACK_BAND = 3 * PERSON   # stem, base height, top-left block height, and all four sides of the screen
+OVERHANG = 2 * PERSON     # how far the base and top-left block stick out past the stem
+BASE_BLACK_W = 7 * PERSON
 
 # Enclosure
 DEPTH = 55.0              # set by the speakers' 45 mm width and 1.5 mm clearance
 WALL = 3.0
 FRONT = 3.0
 FRONT_SKIN = 2.0          # no blind hole may come closer than this to the front face
+
+# Every screw is an M3 x 10 mm self-tapping screw, threaded directly into the plastic.
+PILOT_HOLE = 2.7          # confirm with the test coupon. Too small is what cracks posts
+PILOT_DEPTH = 8.0         # 1 mm past the longest thread, so the tip never bottoms out
+BOSS_D = 10.0             # leaves 3.65 mm of wall around the pilot
+SPEAKER_BOSS_D = 11.6     # these posts print sideways, so they get extra wall
+SCREW_LEN = 10.0
+CLIP_RISE = 4.0           # clip posts stand this far behind the panel, for more thread
+CLEAR_HOLE = 3.4          # free fit for the screw through the part being clamped
 COVER = 3.0
-SPLIT_SHELL = 11 * UNIT   # where the front shell splits into two sections
+SPLIT_SHELL = 138.6   # where the front shell splits into two sections
 SPLIT_COVER = 112.0       # covers split lower so they bridge the shell joint
 
 # LED edge
@@ -129,12 +133,19 @@ def union(parts):
     return result
 
 
-O = [(x * UNIT, y * UNIT) for x, y in SHAPE]
-W_TOTAL, H_TOTAL = 25.5 * UNIT, 31 * UNIT
-SCREEN_X, SCREEN_Y = (STEM_L * UNIT + W_TOTAL) / 2, 22 * UNIT
-BAND_Y = 13 * UNIT        # underside of the band below the screen
-FOOT_W, FOOT_H = 9 * UNIT, 4 * UNIT
-STEM_X0, STEM_X1 = STEM_L * UNIT, STEM_R * UNIT
+STEM_X0 = OVERHANG
+STEM_X1 = STEM_X0 + BLACK_BAND + 2 * LED_STEP
+SCREEN_X = STEM_X0 + LED_STEP + BLACK_BAND + WINDOW_W / 2
+W_TOTAL = SCREEN_X + WINDOW_W / 2 + BLACK_BAND + LED_STEP
+BAND_Y = 163.8            # underside of the band below the screen
+SCREEN_Y = BAND_Y + LED_STEP + BLACK_BAND + WINDOW_H / 2
+H_TOTAL = SCREEN_Y + WINDOW_H / 2 + BLACK_BAND + LED_STEP
+FOOT_W = BASE_BLACK_W + 2 * LED_STEP
+FOOT_H = BLACK_BAND + 2 * LED_STEP
+SERIF_Y = H_TOTAL - FOOT_H
+STEM_CX = (STEM_X0 + STEM_X1) / 2
+O = [(0, 0), (FOOT_W, 0), (FOOT_W, FOOT_H), (STEM_X1, FOOT_H), (STEM_X1, BAND_Y), (W_TOTAL, BAND_Y), (W_TOTAL, H_TOTAL),
+     (0, H_TOTAL), (0, SERIF_Y), (STEM_X0, SERIF_Y), (STEM_X0, FOOT_H), (0, FOOT_H)]
 
 PANEL_Z0 = DEPTH - FRONT - PANEL_T
 PANEL_X0, PANEL_X1 = SCREEN_X - PANEL_W / 2, SCREEN_X + PANEL_W / 2
@@ -149,7 +160,7 @@ SPK_Z1 = SPK_Z0 + SPK_W
 SPK_ZC = (SPK_Z0 + SPK_Z1) / 2
 SPK_REAR_Z = SPK_ZC - SPK_HOLE_W / 2
 
-AUDIO_STRAP_XS = (AUDIO_X - 6.0, AUDIO_X + AUDIO_W + 4.5)
+AUDIO_STRAP_XS = (AUDIO_X - 6.0, AUDIO_X + AUDIO_W + 5.5)
 AUDIO_STRAP_Y = AUDIO_Y + 26.0
 
 CLAMP_XS = (PANEL_X0 - 9.5, PANEL_X1 + 9.5)
@@ -157,15 +168,15 @@ CLAMP_TOP_Y = PANEL_Y1 + 6
 CLAMP_BOTTOM_Y = PANEL_Y0 - 6
 SPLICE_XS = (49.0, 64.5)
 SPLICE_YS = (SPLIT_SHELL - 12, SPLIT_SHELL + 12)
-SPLICE_BOSS = 5.0
+SPLICE_BOSS = 9.0
 SPLICE_Z1 = DEPTH - FRONT - SPLICE_BOSS
 
-SCALE = UNIT / 11.9
-SCREWS_UPPER = [(8 * SCALE, 361 * SCALE), (150 * SCALE, 361 * SCALE), (295 * SCALE, 361 * SCALE), (8.5, 346.5),
-                (33, 307), (33, 238), (33, 175), (33, 119), (80, 119), (80, 155),
-                (314.5, 317), (316.0, 243.5), (315.5, 169), (201, 169)]
-SCREWS_LOWER = [(33, 104), (80, 104), (33, 57), (80, 57), (3.5, 8.5), (110, 8.5), (3.5, 42), (110, 42)]
-KEYHOLES = [(75.0, 370.0), (276.0, 370.0)]
+SCREWS_UPPER = [(8, H_TOTAL - 8), (150, H_TOTAL - 8), (W_TOTAL - 6, H_TOTAL - 8), (8, SERIF_Y + 7),
+                (STEM_X0 + 6, 300), (STEM_X0 + 6, 238), (STEM_X0 + 6, 175), (STEM_X0 + 6, 119), (STEM_X1 - 6, 119), (STEM_X1 - 6, 155),
+                (W_TOTAL - 6.8, 317), (W_TOTAL - 5.3, 243.5), (W_TOTAL - 5.8, 169), (201, 169)]
+SCREWS_LOWER = [(STEM_X0 + 6, 104), (STEM_X1 - 6, 104), (STEM_X0 + 6, 75), (STEM_X1 - 6, 75),
+                (8, 8), (FOOT_W - 8, 8), (8, FOOT_H - 8), (FOOT_W - 8, FOOT_H - 8)]
+KEYHOLES = [(75.0, H_TOTAL - 21), (276.0, H_TOTAL - 21)]
 PI_Z0 = COVER
 PI_BOARD_Z = PI_Z0 + CASE_PCB_Z + PI_BOARD_T   # top of the board
 PI_BRACKET_Z = PI_Z0 + CASE_T + SPACER_H
@@ -184,7 +195,7 @@ def vent_slots():
     """Returns (position, wall) for every vent. Wall is top, right, left or under."""
     screw_x = [q[0] for q in SCREWS_UPPER if q[1] > H_TOTAL - 20]
     right_y = [q[1] for q in SCREWS_UPPER if q[0] > W_TOTAL - 12]
-    left_y = [q[1] for q in SCREWS_UPPER if 28 < q[0] < 45]
+    left_y = [q[1] for q in SCREWS_UPPER if 25 < q[0] < 45]
     slots = {"top": [], "right_high": [], "right_low": [], "left": [], "under": [], "foot": [], "stem_left": [], "stem_right": []}
     x = 60.0
     while x < W_TOTAL - 20:
@@ -197,14 +208,14 @@ def vent_slots():
             slots["right_low" if y < 262 else "right_high"].append(y)
         y += 10
     y = 182.0
-    while y < 330:
+    while y < SERIF_Y - 10:
         if all(abs(y - c) > 8 for c in left_y):
             slots["left"].append(y)
         y += 10
-    slots["under"] = [90.0, 95.0, 196.0, 206.0]
+    slots["under"] = [96.0, 101.0, 194.0, 208.0]
     slots["foot"] = [x for x in (18.0, 26.0, 34.0, 42.0, 72.0, 80.0, 88.0, 96.0)]
     lower = [q[1] for q in SCREWS_LOWER + SCREWS_UPPER]
-    y = 62.0
+    y = 84.0
     while y < 158:
         if abs(y - SPLIT_SHELL) > 8 and all(abs(y - c) > 8 for c in lower):
             slots["stem_left"].append(y)
@@ -258,24 +269,24 @@ def front_shell():
     cavity = prism(inset(O, WALL), -1, DEPTH - LED_DEPTH - LED_FLOOR)
     cavity += prism(inset(O, LED_STEP + 2), DEPTH - LED_DEPTH - LED_FLOOR - 0.1, DEPTH - FRONT)
 
-    keep = [cyl(x, y, 8, COVER, DEPTH) for x, y in SCREWS_UPPER + SCREWS_LOWER]
-    keep += [cyl(x, y, 8, PANEL_Z0, DEPTH) for x in CLAMP_XS for y in (CLAMP_TOP_Y, CLAMP_BOTTOM_Y)]
-    keep += [cyl(x, y, 7, SPLICE_Z1, DEPTH) for x in SPLICE_XS for y in SPLICE_YS]
+    keep = [cyl(x, y, BOSS_D, COVER, DEPTH) for x, y in SCREWS_UPPER + SCREWS_LOWER]
+    keep += [cyl(x, y, BOSS_D, PANEL_Z0 - CLIP_RISE, DEPTH) for x in CLAMP_XS for y in (CLAMP_TOP_Y, CLAMP_BOTTOM_Y)]
+    keep += [cyl(x, y, BOSS_D, SPLICE_Z1, DEPTH) for x in SPLICE_XS for y in SPLICE_YS]
     for cx in SPK_CENTERS:
         for x in (cx - SPK_HOLE_L / 2, cx + SPK_HOLE_L / 2):
             # Rear tabs screw down onto posts. Front tabs hook under pads on the front wall.
-            keep.append(Pos(x, BAND_Y + WALL / 2 + SPK_CHIMNEY / 2, SPK_REAR_Z) * Rot(90, 0, 0) * Cylinder(4, SPK_CHIMNEY + WALL))
+            keep.append(Pos(x, BAND_Y + WALL / 2 + SPK_CHIMNEY / 2, SPK_REAR_Z) * Rot(90, 0, 0) * Cylinder(SPEAKER_BOSS_D / 2, SPK_CHIMNEY + WALL))
             keep.append(box(x - 5, x + 5, SPK_Y0 + SPK_EAR_Y1 + 0.4, SPK_Y0 + SPK_EAR_Y1 + 3.4, DEPTH - FRONT - 9, DEPTH))
     cavity -= union(keep)
     shell = solid - cavity
 
-    holes = [cyl(x, y, 2.5, COVER - 1, COVER + 12) for x, y in SCREWS_UPPER + SCREWS_LOWER]
-    holes += [cyl(x, y, 2.5, PANEL_Z0 - 1, DEPTH - FRONT_SKIN) for x in CLAMP_XS for y in (CLAMP_TOP_Y, CLAMP_BOTTOM_Y)]
-    holes += [cyl(x, y, 2.5, SPLICE_Z1 - 1, DEPTH - FRONT_SKIN) for x in SPLICE_XS for y in SPLICE_YS]
+    holes = [cyl(x, y, PILOT_HOLE, COVER - 1, COVER + PILOT_DEPTH) for x, y in SCREWS_UPPER + SCREWS_LOWER]
+    holes += [cyl(x, y, PILOT_HOLE, PANEL_Z0 - CLIP_RISE - 1, PANEL_Z0 - CLIP_RISE + PILOT_DEPTH) for x in CLAMP_XS for y in (CLAMP_TOP_Y, CLAMP_BOTTOM_Y)]
+    holes += [cyl(x, y, PILOT_HOLE, SPLICE_Z1 - 1, SPLICE_Z1 + PILOT_DEPTH) for x in SPLICE_XS for y in SPLICE_YS]
 
     for cx in SPK_CENTERS:
         for x in (cx - SPK_HOLE_L / 2, cx + SPK_HOLE_L / 2):
-            holes.append(Pos(x, SPK_Y0 - 4, SPK_REAR_Z) * Rot(90, 0, 0) * Cylinder(1.25, 8.2))
+            holes.append(Pos(x, SPK_Y0 - PILOT_DEPTH / 2 + 0.5, SPK_REAR_Z) * Rot(90, 0, 0) * Cylinder(PILOT_HOLE / 2, PILOT_DEPTH + 1))
 
     holes.append(box(SCREEN_X - WINDOW_W / 2, SCREEN_X + WINDOW_W / 2, SCREEN_Y - WINDOW_H / 2,
                      SCREEN_Y + WINDOW_H / 2, DEPTH - FRONT - 1, DEPTH + 1))
@@ -309,9 +320,9 @@ def diffuser():
 ZIP_CLIPS = [
     ("Converter, lower tie", CONV_X + CONV_L / 2, CONV_Y - 7, False),
     ("Converter, upper tie", CONV_X + CONV_L / 2, CONV_Y + CONV_W + 7, False),
-    ("12V in, stem top", 56.7, 190, True),
-    ("12V in, stem middle", 56.7, 125, True),
-    ("12V in, stem bottom", 56.7, 60, True),
+    ("12V in, stem top", STEM_CX, 190, True),
+    ("12V in, stem middle", STEM_CX, 125, True),
+    ("12V in, stem bottom", STEM_CX, 80, True),
     ("5V junction", 118, 226, True),
     ("LED far end power", 88, 223, False),
     ("LED start power", 112, 212, True),
@@ -348,9 +359,9 @@ def back_covers():
         cut.append(box(x - 2.5, x + 2.5, y - 6, y + 7, -1, COVER + 1))
         cut.append(cyl(x, y + 7, 5, -1, COVER + 1))
 
-    add += [cyl(x, y, 8, COVER, PI_BRACKET_Z) for x, y in PI_POSTS]
+    add += [cyl(x, y, BOSS_D, COVER, PI_BRACKET_Z) for x, y in PI_POSTS]
     add.append(cradle(PI_X + CASE_X0 - 0.2, PI_X + CASE_X1 + 0.2, PI_Y + CASE_Y0 - 0.2, PI_Y + CASE_Y1 + 0.2, 4))
-    add += [cyl(x, y, 6, COVER, COVER + 8) for x, y in PERF_POSTS]
+    add += [cyl(x, y, 8.5, COVER, COVER + 8) for x, y in PERF_POSTS]
     add.append(cradle(CONV_X, CONV_X + CONV_L, CONV_Y, CONV_Y + CONV_W, 8))
     # USB audio dongle: a low cradle, with a screwed strap across the top
     ax0, ax1, ay1 = AUDIO_X - 0.2, AUDIO_X + AUDIO_W + 0.2, AUDIO_Y + AUDIO_L
@@ -358,16 +369,16 @@ def back_covers():
     add.append(box(ax1, ax1 + 2, AUDIO_Y + 4, ay1 + 2, COVER, COVER + 8))
     add.append(box(ax0, AUDIO_X + 5, ay1 + 0.2, ay1 + 2, COVER, COVER + 8))
     add.append(box(AUDIO_X + AUDIO_W - 5, ax1, ay1 + 0.2, ay1 + 2, COVER, COVER + 8))
-    add += [cyl(x, AUDIO_STRAP_Y, 8, COVER, COVER + AUDIO_T + 0.3) for x in AUDIO_STRAP_XS]
+    add += [cyl(x, AUDIO_STRAP_Y, BOSS_D, COVER, COVER + AUDIO_T + 0.3) for x in AUDIO_STRAP_XS]
 
     add += [zip_anchor(x, y, along_x) for _, x, y, along_x in ZIP_CLIPS]
 
-    cut += [cyl(x, y, 2.5, COVER + 2, PI_BRACKET_Z + 1) for x, y in PI_POSTS]
-    cut += [cyl(x, y, 2.2, COVER + 2, COVER + 9) for x, y in PERF_POSTS]
-    cut += [cyl(x, AUDIO_STRAP_Y, 2.5, COVER + 2, COVER + AUDIO_T + 1) for x in AUDIO_STRAP_XS]
+    cut += [cyl(x, y, PILOT_HOLE, PI_BRACKET_Z - PILOT_DEPTH, PI_BRACKET_Z + 1) for x, y in PI_POSTS]
+    cut += [cyl(x, y, PILOT_HOLE, COVER + 8 - PILOT_DEPTH - 1, COVER + 9) for x, y in PERF_POSTS]
+    cut += [cyl(x, AUDIO_STRAP_Y, PILOT_HOLE, COVER + AUDIO_T + 0.3 - PILOT_DEPTH, COVER + AUDIO_T + 1) for x in AUDIO_STRAP_XS]
     for x, y in SCREWS_UPPER + SCREWS_LOWER:
         cut.append(cyl(x, y, 3.4, -1, COVER + 1))
-        cut.append(cyl(x, y, 6.4, -1, 1.8))
+        cut.append(cyl(x, y, 7.6, -1, 1.8))
     for i in range(6):
         y = PI_Y + 10 + i * 7.5
         cut.append(box(PI_X + 12, PI_X + 70, y - 1.5, y + 1.5, -1, COVER + 1))
@@ -547,12 +558,44 @@ def audio_dongle():
     return case + plug
 
 
+def screw_coupon():
+    """Three posts with trial pilot holes, to choose the size for your printer and filament."""
+    part = box(0, 44, 0, 14, 0, 12)
+    for x, d in ((8, PILOT_HOLE - 0.1), (22, PILOT_HOLE), (36, PILOT_HOLE + 0.1)):
+        part -= cyl(x, 7, d, 12 - PILOT_DEPTH, 13)
+    return part
+
+
+def screw_report():
+    """Every screw joint: wall around the pilot, thread length, and material left past the tip."""
+    rows = [
+        ("Back covers to shell", 22, COVER, BOSS_D),
+        ("Screen clips", 4, CLAMP_T, BOSS_D),
+        ("Stem splice", 4, 4.0, BOSS_D),
+        ("Speaker rear tabs", 4, SPK_EAR_Y1 - SPK_EAR_Y0, SPEAKER_BOSS_D),
+        ("USB dongle strap", 2, 3.0, BOSS_D),
+        ("Pi brackets", 4, PI_BRACKET_T, BOSS_D),
+        ("Level shifter board", 4, 1.6, 8.5),
+    ]
+    bad = 0
+    for name, count, clamped, boss in rows:
+        wall = (boss - PILOT_HOLE) / 2
+        thread = SCREW_LEN - clamped
+        fits = wall >= 2.5 and 5.9 <= thread <= PILOT_DEPTH + 0.5
+        bad += 0 if fits else 1
+        print(f"  {name:22s} x{count:<2d} wall {wall:.2f} mm, thread {thread:.1f} mm in an {PILOT_DEPTH:.0f} mm hole  {'ok' if fits else 'CHECK'}")
+    skin = DEPTH - max(PANEL_Z0 - CLIP_RISE + PILOT_DEPTH, SPLICE_Z1 + PILOT_DEPTH)
+    print(f"  {sum(r[1] for r in rows)} screws, {bad} joints to fix, {skin:.1f} mm of plastic left behind the deepest front holes")
+
+
 def screen_clip(x, y):
-    """Corner clip. Clips replace the full-width bars, which blocked the screen's cables."""
+    """Corner clip. The screw end stands on a raised post, and the tongue steps down onto the panel."""
     toward_center = 1 if x < SCREEN_X else -1
     x0, x1 = sorted((x - 7 * toward_center, x + 26 * toward_center))
-    bar = box(x0, x1, y - 8, y + 8, PANEL_Z0 - CLAMP_T, PANEL_Z0)
-    return bar - cyl(x, y, 3.4, PANEL_Z0 - CLAMP_T - 1, PANEL_Z0 + 1)
+    ear = box(x0, x1, y - 8, y + 8, PANEL_Z0 - CLIP_RISE - CLAMP_T, PANEL_Z0 - CLIP_RISE)
+    t0, t1 = sorted((x + 6.5 * toward_center, x + 26 * toward_center))
+    tongue = box(t0, t1, y - 8, y + 8, PANEL_Z0 - CLIP_RISE - 0.01, PANEL_Z0)
+    return (ear + tongue) - cyl(x, y, CLEAR_HOLE, PANEL_Z0 - CLIP_RISE - CLAMP_T - 1, PANEL_Z0 - CLIP_RISE + 1)
 
 
 def screen_uv(u, v):
@@ -726,7 +769,7 @@ def led_runs():
     """One strip section per straight wall, stopping short of each corner for the jumpers."""
     wall = inset(O, LED_STEP)
     n = len(wall)
-    start = next(i for i, q in enumerate(O) if q == (STEM_R * UNIT, 13 * UNIT))
+    start = next(i for i, q in enumerate(O) if q == (STEM_X1, BAND_Y))
     runs = []
     for k in range(n):
         i = (start + k) % n
@@ -771,7 +814,8 @@ def led_jumpers():
         lift = 1.0
         corner = (cx + (a[3][0] + b[3][0]) * lift, cy + (a[3][1] + b[3][1]) * lift, a[0][2])
         routes.append(build_route(dict(
-            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=1.2, bend=3.5, kind="Jumper wire", pitch=3.2, lead=0.2,
+            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=0.7 if i == 4 else 1.2, bend=2.2 if i == 4 else 3.5,
+            kind="28 AWG jumper" if i == 4 else "Jumper wire", pitch=3.2, lead=0.2,
             start=(a[1], a[2], z_axis), end=(b[0], tuple(-c for c in b[2]), z_axis), via=[corner], check=False)))
     return routes
 
@@ -1008,6 +1052,7 @@ def main():
         "pi_bracket_low": (brackets[1], "print", "body", "back"),
         "pi_bracket_high": (brackets[2], "print", "body", "back"),
         "test_body_corner": (shell & box(W_TOTAL - 70, W_TOTAL + 1, H_TOTAL - 70, H_TOTAL + 1, -1, DEPTH + 1), "test", "body", "front"),
+        "test_screw_holes": (screw_coupon(), "test", "body", "back"),
         "test_diffuser_corner": (ring & box(W_TOTAL - 70, W_TOTAL + 1, H_TOTAL - 70, H_TOTAL + 1, -1, DEPTH + 1), "test", "diffuser", "front"),
     }
 
@@ -1082,6 +1127,25 @@ def main():
 
     print("\nVent check")
     vent_report()
+
+    above = H_TOTAL - LED_STEP - (SCREEN_Y + WINDOW_H / 2)
+    below = SCREEN_Y - WINDOW_H / 2 - (BAND_Y + LED_STEP)
+    side = SCREEN_X - WINDOW_W / 2 - (STEM_X0 + LED_STEP)
+    stem = STEM_X1 - STEM_X0 - 2 * LED_STEP
+    base_h = FOOT_H - 2 * LED_STEP
+    base_w = FOOT_W - 2 * LED_STEP
+    block = H_TOTAL - SERIF_Y - 2 * LED_STEP
+    print(f"\nFormation check, one person = {PERSON:.2f} mm of black")
+    rows = (("Stem width", stem, 3), ("Base height", base_h, 3), ("Base width", base_w, 7), ("Top-left block height", block, 3),
+            ("Top-left block past stem", STEM_X0, 2), ("Base past stem, left", STEM_X0, 2), ("Base past stem, right", FOOT_W - STEM_X1, 2),
+            ("Above screen", above, 3), ("Below screen", below, 3), ("Left of screen", side, 3),
+            ("Right of screen", W_TOTAL - LED_STEP - (SCREEN_X + WINDOW_W / 2), 3))
+    for name, value, people in rows:
+        print(f"  {name:26s} {value:6.1f} mm = {value / PERSON:4.2f} people  {'ok' if abs(value / PERSON - people) < 0.01 else 'DOES NOT MATCH'}")
+
+
+    print("\nScrew joint check")
+    screw_report()
 
     print("\nFront face check")
     front_face_check(printed["shell_upper"], printed["shell_lower"])

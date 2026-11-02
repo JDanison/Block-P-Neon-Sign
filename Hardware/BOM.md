@@ -17,6 +17,7 @@ Only the screen's details come from the maker. Other details are seller listings
 | [chenyang flat HDMI to micro-HDMI cable](https://www.amazon.com/dp/B01367WEI4) | 0.2 m, 90 degree up | Buy after CAD confirms the direction |
 | [SUNGUY right angle USB-A to C cables, 2 pack, 1 ft](https://www.amazon.com/dp/B0784F9JP2) | 1 ft, supports data | For touch. The 6 in version does not reach |
 | [Geekworm N300 heatsink case](https://www.amazon.com/dp/B07X5Y81C6) | 16 mm thick, for Pi 4 | Cools the Pi with no fan |
+| [Glvaner M3 x 10 mm self-tapping screws, 100 pack](https://www.amazon.com/dp/B09NPL4P9W) | 304 stainless steel, pan washer head | Uses 44 |
 | [PATIKIL perfboard, 24 pack](https://www.amazon.com/dp/B0CBPRBRTT) | 1.2 x 1.2 in | Holds the level shifter |
 | [eSUN Lithophane White PLA+, 1 kg](https://www.amazon.com/dp/B0D7PZS1VV) | LED diffuser | Translucent white. Test with your strip first |
 
@@ -32,10 +33,6 @@ Only the screen's details come from the maker. Other details are seller listings
 
 Needed for the current CAD model, if you don't already have them.
 
-- 32 M3 x 10 mm self-tapping screws
-- 4 M3 x 8 mm self-tapping screws, for the screen clips. Longer ones will reach the front face
-- 4 M3 x 12 mm self-tapping screws
-- 4 M2.5 x 6 mm screws (the Pi case kit includes its own screws and spacers)
 - 10 small zip ties, 3.6 mm wide or narrower
 - 2 wall screws with heads under 9 mm and shafts under 5 mm
 - 4 stick-on rubber bumpers, about 8 mm tall
