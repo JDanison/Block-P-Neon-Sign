@@ -3,7 +3,7 @@
 *.service text eol=lf
 *.desktop text eol=lf
 *.rules text eol=lf
-Software/Pi Setup/blockp text eol=lf
-Software/Pi Setup/blockp-session text eol=lf
-Software/Pi Setup/autostart text eol=lf
-Software/Pi Setup/kanshi-config text eol=lf
+Software/Pi[[:space:]]Setup/blockp text eol=lf
+Software/Pi[[:space:]]Setup/blockp-session text eol=lf
+Software/Pi[[:space:]]Setup/autostart text eol=lf
+Software/Pi[[:space:]]Setup/kanshi-config text eol=lf
