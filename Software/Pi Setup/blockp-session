@@ -1,0 +1,8 @@
+#!/bin/sh
+# Block P kiosk session. Same start-up as the Pi's labwc-pi, but labwc reads only
+# ~/.config/blockp-labwc (no -m merge), so the desktop panel and file manager never start.
+. /usr/bin/setup_env
+if raspi-config nonint is_pi && ! raspi-config nonint gpu_has_mmu ; then
+  export WLR_RENDERER=pixman
+fi
+exec /usr/bin/labwc -C "$HOME/.config/blockp-labwc"

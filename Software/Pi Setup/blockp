@@ -1,0 +1,42 @@
+#!/bin/bash
+# Block P sign switches. Run "blockp" with no arguments for help.
+export XDG_RUNTIME_DIR="${XDG_RUNTIME_DIR:-/run/user/$(id -u)}"
+export WAYLAND_DISPLAY="${WAYLAND_DISPLAY:-wayland-0}"
+KANSHI="$HOME/.config/kanshi/config"
+LIGHTDM=/etc/lightdm/lightdm.conf
+session() { sudo sed -i -E "s/^autologin-session=.*/autologin-session=$1/" "$LIGHTDM"; }
+current() { grep -m1 "^autologin-session=" "$LIGHTDM" | cut -d= -f2; }
+
+case "$1 $2" in
+  "rotate 180"|"rotate normal")
+    sed -i -E "s/transform [a-z0-9-]+/transform $2/" "$KANSHI"
+    kanshictl reload && echo "Screen is now $2 (touch follows it)." ;;
+  "kiosk on")
+    session blockp-kiosk
+    echo "Kiosk on. Restarting the screen session..."; sudo systemctl restart lightdm ;;
+  "kiosk off")
+    session rpd-labwc
+    echo "Kiosk off, normal desktop. Restarting the screen session..."; sudo systemctl restart lightdm ;;
+  "restart "*)
+    pkill -x chromium && echo "Screen reloading (the kiosk relaunches it)." ;;
+  "restart-server "*)
+    sudo systemctl restart blockp && echo "Sign server restarted." ;;
+  "add "*)
+    shift; ~/blockp/venv/bin/python ~/blockp/app/downloader.py "$@" && curl -s -X POST -d '{"type":"rescan"}' http://127.0.0.1/api/cmd >/dev/null ;;
+  "logs "*)
+    journalctl -u blockp -n 60 --no-pager ;;
+  "status "*)
+    echo "screen:  $(wlr-randr | grep -m1 Transform | xargs)"
+    echo "kiosk:   $([ "$(current)" = blockp-kiosk ] && echo on || echo "off ($(current))")"
+    echo "server:  $(systemctl is-active blockp)"
+    echo "browser: $(pgrep -x chromium >/dev/null && echo running || echo stopped)"
+    echo "videos:  $(ls "$HOME"/blockp/library/videos/*.mp4 2>/dev/null | wc -l)" ;;
+  *)
+    echo "usage: blockp rotate 180|normal   flip the picture and touch"
+    echo "       blockp kiosk on|off        sign app at boot, or the normal desktop"
+    echo "       blockp restart             reload the screen"
+    echo "       blockp restart-server      restart the sign server"
+    echo "       blockp add <link> [--title T] [--year Y]   download a video to the sign"
+    echo "       blockp logs                recent server messages"
+    echo "       blockp status" ;;
+esac

@@ -1,0 +1,5 @@
+[Desktop Entry]
+Name=Block P kiosk
+Comment=Fullscreen Block P player, no desktop
+Exec=/usr/local/bin/blockp-session
+Type=Application

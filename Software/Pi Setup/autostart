@@ -1,0 +1,3 @@
+# Block P kiosk session autostart (~/.config/blockp-labwc). Only these run.
+/usr/bin/kanshi &
+/usr/bin/lwrespawn /home/pi/blockp/app/kiosk.sh &

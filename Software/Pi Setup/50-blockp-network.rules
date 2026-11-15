@@ -1,0 +1,8 @@
+// Block P sign: let the sign's account (pi) manage Wi-Fi through NetworkManager without sudo,
+// so the touch-screen Wi-Fi settings work and passwords never pass through sudo's command log.
+// Goes in /etc/polkit-1/rules.d/
+polkit.addRule(function (action, subject) {
+    if (action.id.indexOf("org.freedesktop.NetworkManager.") === 0 && subject.user === "pi") {
+        return polkit.Result.YES;
+    }
+});

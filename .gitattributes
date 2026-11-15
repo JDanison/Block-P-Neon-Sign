@@ -1,0 +1,9 @@
+# Files that run on the Pi keep Linux line endings, even when checked out on Windows
+*.sh text eol=lf
+*.service text eol=lf
+*.desktop text eol=lf
+*.rules text eol=lf
+Software/Pi Setup/blockp text eol=lf
+Software/Pi Setup/blockp-session text eol=lf
+Software/Pi Setup/autostart text eol=lf
+Software/Pi Setup/kanshi-config text eol=lf

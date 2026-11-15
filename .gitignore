@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# Private: the Pi's password and address stay on this PC only
+Software/ssh instructions.txt
+Software/RPi IP Address.txt

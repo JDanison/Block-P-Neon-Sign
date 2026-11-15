@@ -1,0 +1,3 @@
+aiohttp>=3.10
+qrcode[pil]>=8.0
+yt-dlp[default]>=2026.10

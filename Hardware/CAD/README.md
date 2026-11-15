@@ -26,7 +26,6 @@ Drag the STL files into Bambu Studio. They're already laid flat, and every filen
 | `step` | Exact CAD files for each part, plus the full assembly |
 | `block_p_assembly_preview.stl` | The assembled sign, for other model viewers |
 
-`Hardware/CAD_v1_saved` is a frozen copy from before the Build guide was added.
 
 ## Rebuild
 

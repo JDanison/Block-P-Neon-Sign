@@ -7,4 +7,7 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 - [PROGRESS.md](PROGRESS.md): decisions, current status and next steps
 - [Hardware/BOM.md](Hardware/BOM.md): parts list with Amazon links
 - [Design Process/Renders/block-p-renders.html](Design%20Process/Renders/block-p-renders.html): 3D renders, wiring and power (open it in a browser)
-- [Software](Software): LED scripts, Pi setup notes and early web work
+- [Software/blockp-app](Software/blockp-app): the sign's software, with playback, the touch-screen menu, lights, Wi-Fi and the phone controls
+- [Software/Pi Setup](Software/Pi%20Setup): how the Pi is set up to boot into the sign, plus the idle screen and the scripts that made it
+- [Software/show-links.md](Software/show-links.md): show videos to load onto the sign
+- [Hardware/CAD](Hardware/CAD): the enclosure CAD, print files and assembly viewer
