@@ -21,8 +21,8 @@ let ledTick = 0;
 let ws, wsReady = false;
 function connect() {
   ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/ws`);
-  ws.onopen = () => { wsReady = true; syncLightWatch(); };
-  ws.onclose = () => { wsReady = false; setTimeout(connect, 1500); };
+  ws.onopen = () => { wsReady = true; watching = false; syncLightWatch(); setConn(); };
+  ws.onclose = () => { wsReady = false; setConn(); setTimeout(connect, 1500); };
   ws.onmessage = e => onMessage(JSON.parse(e.data));
 }
 const send = obj => { if (wsReady) ws.send(JSON.stringify(obj)); };
@@ -318,7 +318,26 @@ async function loadSystem() {
 // ---------- rendering ----------
 const TITLES = { library: 'Library', lights: 'Lights', settings: 'Settings', phone: 'Use your phone', add: 'Add',
   wifi: 'Wi-Fi', join: 'Join a network' };
+// Phones, tablets and computers: a header with the sign's name, a live connection badge and tabs
+// (bottom tab bar on phones, top tabs on wider screens). Sub-pages keep a back button.
+const TABS = [['home', 'house', 'Home'], ['library', 'film', 'Library'], ['lights', 'lightbulb', 'Lights'], ['settings', 'settings', 'Settings']];
+const TAB_OF = { home: 'home', library: 'library', add: 'library', lights: 'lights', settings: 'settings', wifi: 'settings', join: 'settings', phone: 'settings' };
+function remoteHeader() {
+  const tab = TAB_OF[app.view];
+  const top = TABS.some(([v]) => v === app.view);
+  return `<header class="rbar"><div class="brand"><img src="/ui/icons/icon-192.png" alt=""><b>Block P</b>
+      <span class="conn ${wsReady ? 'ok' : ''}" id="conn">${wsReady ? 'Connected' : 'Reconnecting…'}</span></div>
+    <nav class="tabs">${TABS.map(([v, ic, label]) => `<button data-go="${v}" class="${tab === v ? 'on' : ''}">${icon(ic)}<span>${label}</span></button>`).join('')}</nav></header>
+    ${top ? (app.view === 'home' ? '' : `<h1 class="rtitle">${TITLES[app.view]}</h1>`)
+      : `<div class="head"><button class="round" data-act="back">${icon('chevron-left')}</button><div class="title">${TITLES[app.view] || ''}</div></div>`}`;
+}
+function setConn() {
+  const c = $('#conn');
+  if (c) { c.classList.toggle('ok', wsReady); c.textContent = wsReady ? 'Connected' : 'Reconnecting…'; }
+}
+
 function header() {
+  if (!SCREEN) return remoteHeader();
   const close = SCREEN ? `<button class="round" data-act="close">${icon('x')}</button>` : '';
   if (app.view === 'home') {
     const sys = app.sys;
@@ -353,8 +372,29 @@ function update(fromRender = false) {
   else if (app.view === 'wifi') { if (!fromRender) render(); }
 }
 
+// ----- home on phones and computers -----
+function remoteHomeView() {
+  const sq = (act, ic, label) => `<button class="sq" data-act="${act}">${icon(ic)}<span>${label}</span></button>`;
+  const night = app.state.sleeping ? `<div class="night">${icon('moon')}<div class="grow"><b>Night mode is on</b>
+    <span>The sign’s screen and lights are off.</span></div><button class="btn gold" data-act="wake">Wake</button></div>` : '';
+  return `${night}<div class="rhome">
+    <div class="tile now" id="now"></div>
+    <div class="tile ctl">
+      <div class="lab">Screen brightness</div>
+      <div class="hs" id="hsB"><div class="fill"></div><div class="lab">${icon('sun')}</div></div>
+      <div class="lab">Volume</div>
+      <div class="row" style="flex-wrap:nowrap"><button class="round" data-act="mute" id="muteBtn">${icon('volume-2')}</button>
+        <div class="hs" id="hsV" style="min-width:0"><div class="fill"></div></div></div>
+    </div>
+    <div class="tile lt" data-act="lights"><canvas class="leds" id="ltMini"></canvas>
+      <button class="pw" id="ltPower" data-act="lightsPower">${icon('power')}</button><div class="nm" id="ltName"></div></div>
+    <div class="quick">${sq('videos', 'film', 'Videos')}${sq('photos', 'image', 'Photos')}${sq('sleep', 'moon', 'Night')}${sq('idle', 'house', 'Idle screen')}</div>
+  </div>`;
+}
+
 // ----- home: control centre -----
 function homeView() {
+  if (!SCREEN) return remoteHomeView();
   const sq = (act, ic, label, extra = '') => `<button class="sq" data-act="${act}" ${extra}>${icon(ic)}<span>${label}</span></button>`;
   return `<div class="cc">
     <div class="tile now" id="now"></div>
@@ -414,8 +454,13 @@ function updateHome() {
   const st = app.state, s = S();
   $('#vsBright')?._set?.(s.display.brightness);
   $('#vsVol')?._set?.(s.audio.muted ? 0 : s.audio.volume);
+  $('#hsB')?._set?.(s.display.brightness);
+  $('#hsV')?._set?.(s.audio.muted ? 0 : s.audio.volume);
+  const volIcon = icon(s.audio.muted || s.audio.volume === 0 ? 'volume-x' : 'volume-2');
   const vi = $('#volIc');
-  if (vi) vi.innerHTML = icon(s.audio.muted || s.audio.volume === 0 ? 'volume-x' : 'volume-2');
+  if (vi) vi.innerHTML = volIcon;
+  const mb = $('#muteBtn');
+  if (mb) mb.innerHTML = volIcon;
   $('#ltPower')?.classList.toggle('on', s.lights.on);
   const nm = $('#ltName');
   if (nm) nm.textContent = s.lights.on ? MODE_NAMES[s.lights.mode] || s.lights.mode : 'Off';
@@ -772,9 +817,10 @@ function bindSlider(el, { min = 0, max = 100, vertical = false, live, commit, ta
 function bind() {
   const s = S();
   sheet.onclick = async e => {
-    const t = e.target.closest('[data-act],[data-tab],[data-play],[data-more],[data-album],[data-mode],[data-color],[data-tog],[data-seg],[data-step],[data-power],[data-clear],[data-addk],[data-net],[data-forget],[data-field]');
+    const t = e.target.closest('[data-act],[data-tab],[data-play],[data-more],[data-album],[data-mode],[data-color],[data-tog],[data-seg],[data-step],[data-power],[data-clear],[data-addk],[data-net],[data-forget],[data-field],[data-go]');
     if (!t) return;
     const d = t.dataset;
+    if (d.go) { window.scrollTo(0, 0); return go(d.go); }
     if (d.net) {
       const n = app.wifiData?.networks.find(x => x.ssid === d.net);
       if (n && !n.connected && app.state.wifi.status !== 'connecting') startJoin(n);
@@ -818,6 +864,8 @@ function bind() {
       case 'close': return closeSheet();
       case 'back': return go({ add: 'library', join: 'wifi', wifi: 'settings' }[app.view] || 'home');
       case 'wifi': return go('wifi');
+      case 'mute': return cmd('mute');
+      case 'wake': return cmd('sleep', { on: false });
       case 'wifiRefresh': return loadWifi();
       case 'wifiOther': return startJoin(null);
       case 'wifiJoin': return joinWifi();
@@ -850,6 +898,8 @@ function bind() {
   bindSlider($('#vsBright'), { vertical: true, min: 1, live: v => cmd('brightness', { value: v }), commit: v => cmd('brightness', { value: v }) });
   bindSlider($('#vsVol'), { vertical: true, live: v => cmd('volume', { value: v }), commit: v => cmd('volume', { value: v }),
     tap: () => cmd('mute') });
+  bindSlider($('#hsB'), { min: 1, pct: false, live: v => cmd('brightness', { value: v }), commit: v => cmd('brightness', { value: v }) });
+  bindSlider($('#hsV'), { pct: false, live: v => cmd('volume', { value: v }), commit: v => cmd('volume', { value: v }) });
   bindSlider($('#hsBright'), { min: 1, pct: false, live: v => cmd('brightness', { value: v }), commit: v => cmd('brightness', { value: v }) });
   bindSlider($('#hsLB'), { pct: false, live: v => cmd('lights', { brightness: Math.round(v) }), commit: v => cmd('lights', { brightness: Math.round(v) }) });
   bindSlider($('#hsLS'), { min: 0.25, max: 3, pct: false, live: v => cmd('lights', { speed: +v.toFixed(2) }), commit: v => cmd('lights', { speed: +v.toFixed(2) }) });

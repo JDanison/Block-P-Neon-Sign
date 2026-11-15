@@ -1,0 +1,16 @@
+{
+  "name": "Block P Sign",
+  "short_name": "Block P",
+  "description": "Control the Purdue All-American Marching Band Block P sign",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0b0b0c",
+  "theme_color": "#0b0b0c",
+  "icons": [
+    { "src": "/ui/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "/ui/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "/ui/icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
