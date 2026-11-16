@@ -44,7 +44,7 @@ function onMessage(m) {
     if (first) render(); else update();
   } else if (m.type === 'library') {
     app.lib = m.library;
-    if (app.view === 'library' && !dragging) render(); else update();
+    if ((app.view === 'library' || app.view === 'album') && !dragging) render(); else update();
   } else if (m.type === 'progress') {
     if (!SCREEN) { app.progress = m; updateNow(); }
   } else if (m.type === 'seek') {
@@ -320,11 +320,11 @@ async function loadSystem() {
 
 // ---------- rendering ----------
 const TITLES = { library: 'Library', lights: 'Lights', settings: 'Settings', phone: 'Use your phone', add: 'Add',
-  wifi: 'Wi-Fi', join: 'Join a network' };
+  wifi: 'Wi-Fi', join: 'Join a network', album: 'Album' };
 // Phones, tablets and computers: a header with the sign's name, a live connection badge and tabs
 // (bottom tab bar on phones, top tabs on wider screens). Sub-pages keep a back button.
 const TABS = [['home', 'house', 'Home'], ['library', 'film', 'Library'], ['lights', 'lightbulb', 'Lights'], ['settings', 'settings', 'Settings']];
-const TAB_OF = { home: 'home', library: 'library', add: 'library', lights: 'lights', settings: 'settings', wifi: 'settings', join: 'settings', phone: 'settings' };
+const TAB_OF = { home: 'home', library: 'library', add: 'library', lights: 'lights', settings: 'settings', wifi: 'settings', join: 'settings', phone: 'settings', album: 'library' };
 function remoteHeader() {
   const tab = TAB_OF[app.view];
   const top = TABS.some(([v]) => v === app.view);
@@ -332,7 +332,7 @@ function remoteHeader() {
       <span class="conn ${wsReady ? 'ok' : ''}" id="conn">${wsReady ? 'Connected' : 'Reconnecting…'}</span></div>
     <nav class="tabs">${TABS.map(([v, ic, label]) => `<button data-go="${v}" class="${tab === v ? 'on' : ''}">${icon(ic)}<span>${label}</span></button>`).join('')}</nav></header>
     ${top ? (app.view === 'home' ? '' : `<h1 class="rtitle">${TITLES[app.view]}</h1>`)
-      : `<div class="head"><button class="round" data-act="back">${icon('chevron-left')}</button><div class="title">${TITLES[app.view] || ''}</div></div>`}`;
+      : `<div class="head"><button class="round" data-act="back">${icon('chevron-left')}</button><div class="title">${esc(app.view === 'album' ? app.album : TITLES[app.view] || '')}</div></div>`}`;
 }
 function setConn() {
   const c = $('#conn');
@@ -348,7 +348,7 @@ function header() {
       <div class="spacer"></div><div class="status" id="status"></div>${close}</div>`;
   }
   return `<div class="head"><button class="round" data-act="back">${icon('chevron-left')}</button>
-    <div class="title">${TITLES[app.view] || ''}</div><div class="spacer"></div>
+    <div class="title">${esc(app.view === 'album' ? app.album : TITLES[app.view] || '')}</div><div class="spacer"></div>
     <div class="clock js-clock" style="font-size:20px;color:var(--text-2)">${clock()}</div>${close}</div>`;
 }
 
@@ -356,7 +356,7 @@ function render() {
   if (!app.state) return;
   const scroll = $('.body', sheet)?.scrollTop || 0;
   const views = { home: homeView, library: libraryView, lights: lightsView, settings: settingsView, phone: phoneView, add: addView,
-    wifi: wifiView, join: joinView };
+    wifi: wifiView, join: joinView, album: albumView };
   sheet.classList.toggle('full', app.view !== 'home' && SCREEN);
   sheet.innerHTML = header() + `<div class="body">${(views[app.view] || homeView)()}</div>` + '<div class="handle"></div>';
   const body = $('.body', sheet);
@@ -373,6 +373,7 @@ function update(fromRender = false) {
   else if (app.view === 'settings') { if (!fromRender) render(); }
   else if (app.view === 'library') { if (!fromRender) updateLibrary(); }
   else if (app.view === 'wifi') { if (!fromRender) render(); }
+  else if (app.view === 'album') { if (!fromRender) render(); }
 }
 
 // ----- home on phones and computers -----
@@ -491,13 +492,17 @@ function libraryView() {
       groups += `<h3>${esc(y)}</h3><div class="grid">${byYear[y].map(videoCard).join('')}</div>`;
     }
     const empty = !vids.length ? `<div class="empty"><b>No videos yet</b>Add show videos from your phone: open Use your phone, or tap Add.</div>` : '';
+    const editing = app.libEdit;
     return `<div class="row">${seg}<div class="spacer" style="flex:1"></div>
-      ${vids.length ? `<button class="btn primary" data-act="playAll">${icon('play')}Play all</button>
+      ${vids.length && !editing ? `<button class="btn primary" data-act="playAll">${icon('play')}Play all</button>
       <button class="btn" data-act="shuffleAll">${icon('shuffle')}Shuffle</button>` : ''}
-      <button class="btn" data-act="addVideo">${icon('plus')}Add</button></div><div style="height:18px"></div>${dls}${empty}${groups}`;
+      ${editing ? '' : `<button class="btn" data-act="addVideo">${icon('plus')}Add</button>`}
+      ${vids.length ? `<button class="btn ${editing ? 'gold' : ''}" data-act="libEdit">${icon(editing ? 'check' : 'pencil')}${editing ? 'Done' : 'Edit'}</button>` : ''}</div>
+      ${editing ? '<p class="hint">Use the arrows to reorder each season. Videos switched off are skipped by Play all and at startup, but you can still play them by tapping.</p>' : ''}
+      <div style="height:18px"></div>${dls}${empty}${groups}`;
   }
   const albums = app.lib.albums;
-  const cards = albums.map(a => `<button class="card" data-album="${esc(a.name)}"><div class="th" style="background-image:url('${esc(a.cover || '')}')"></div>
+  const cards = albums.map(a => `<button class="card" data-openalbum="${esc(a.name)}"><div class="th" style="background-image:url('${esc(a.cover || '')}')"></div>
     <div class="cap"><b>${esc(a.name)}</b><span>${a.count} photo${a.count === 1 ? '' : 's'}</span></div></button>`).join('');
   return `<div class="row">${seg}<div class="spacer" style="flex:1"></div>
     ${albums.length ? `<button class="btn primary" data-act="shufflePhotos">${icon('shuffle')}Shuffle all</button>` : ''}
@@ -507,10 +512,34 @@ function libraryView() {
 function videoCard(v) {
   const cur = currentItem();
   const playing = cur?.kind === 'video' && cur.id === v.id;
-  return `<div class="card" data-play="${esc(v.id)}" role="button"><div class="th" style="background-image:url('${esc(v.thumb_url || '')}')">
+  const id = esc(v.id), off = v.rotation === false;
+  const edit = app.libEdit ? `<div class="editbar">
+      <button class="round" data-move="${id}" data-d="-1">${icon('chevron-up')}</button>
+      <button class="round" data-move="${id}" data-d="1">${icon('chevron-down')}</button>
+      <button class="rot ${off ? '' : 'on'}" data-rot="${id}">${off ? `${icon('x')}Skipped` : `${icon('check')}Play all`}</button>
+      <button class="round danger" data-del="${id}">${icon('trash-2')}</button></div>` : '';
+  return `<div class="card ${off ? 'dim' : ''}" data-play="${id}" role="button"><div class="th" style="background-image:url('${esc(v.thumb_url || '')}')">
     ${v.duration ? `<span class="badge">${fmt(v.duration)}</span>` : ''}${playing ? '<span class="playing">PLAYING</span>' : ''}</div>
-    <div class="cap"><b>${esc(v.title)}</b><span>${esc(v.year || '')}</span></div>
-    <button class="more" data-more="${esc(v.id)}">${icon('pencil')}</button></div>`;
+    <div class="cap"><b>${esc(v.title)}</b><span>${esc(v.year || '')}${off ? ' · not in Play all' : ''}</span></div>
+    ${app.libEdit ? '' : `<button class="more" data-more="${id}">${icon('pencil')}</button>`}${edit}</div>`;
+}
+
+// ----- one photo album -----
+function albumView() {
+  const a = app.lib.albums.find(x => x.name === app.album);
+  if (!a) return `<div class="empty"><b>Album not found</b>It may have been deleted or renamed.</div>`;
+  const editing = app.libEdit;
+  const photos = a.photos.map(p => `<div class="ph" style="background-image:url('${esc(p.thumb_url)}')">
+    ${editing ? `<button class="round danger" data-delphoto="${esc(p.id)}">${icon('trash-2')}</button>` : ''}</div>`).join('');
+  return `<div class="row"><button class="btn primary" data-act="albumPlay">${icon('play')}Play</button>
+      <button class="btn" data-act="albumShuffle">${icon('shuffle')}Shuffle</button><div style="flex:1"></div>
+      <button class="btn ${editing ? 'gold' : ''}" data-act="libEdit">${icon(editing ? 'check' : 'pencil')}${editing ? 'Done' : 'Edit'}</button></div>
+    ${editing ? `<div class="group" style="margin-top:16px">
+      ${SCREEN ? '' : `<div class="item"><input type="text" id="albumName" value="${esc(a.name)}" style="flex:1;min-width:180px">
+        <button class="btn" data-act="albumRename">Rename</button></div>`}
+      <div class="item"><div class="k">Delete this album<small>${a.count} photo${a.count === 1 ? '' : 's'} on the sign</small></div>
+        <button class="btn danger" data-act="albumDelete">${icon('trash-2')}Delete album</button></div></div>` : ''}
+    <div class="phgrid">${photos}</div>`;
 }
 let libKey = '';
 function updateLibrary() {
@@ -820,10 +849,23 @@ function bindSlider(el, { min = 0, max = 100, vertical = false, live, commit, ta
 function bind() {
   const s = S();
   sheet.onclick = async e => {
-    const t = e.target.closest('[data-act],[data-tab],[data-play],[data-more],[data-album],[data-mode],[data-color],[data-tog],[data-seg],[data-step],[data-power],[data-clear],[data-addk],[data-net],[data-forget],[data-field],[data-go]');
+    const t = e.target.closest('[data-act],[data-tab],[data-play],[data-more],[data-album],[data-mode],[data-color],[data-tog],[data-seg],[data-step],[data-power],[data-clear],[data-addk],[data-net],[data-forget],[data-field],[data-go],[data-move],[data-rot],[data-del],[data-openalbum],[data-delphoto]');
     if (!t) return;
     const d = t.dataset;
-    if (d.go) { window.scrollTo(0, 0); return go(d.go); }
+    if (d.go) { window.scrollTo(0, 0); app.libEdit = false; return go(d.go); }
+    if (d.move) return cmd('move_video', { id: d.move, delta: +d.d });
+    if (d.rot) { const v = app.lib.videos.find(x => x.id === d.rot); return cmd('video_rotation', { id: d.rot, on: v?.rotation === false }); }
+    if (d.del) {
+      const v = app.lib.videos.find(x => x.id === d.del);
+      if (await confirmBox('Delete this video?', v?.title || '', 'Delete', true)) cmd('delete_video', { id: d.del });
+      return;
+    }
+    if (d.openalbum) { app.album = d.openalbum; app.libEdit = false; return go('album'); }
+    if (d.delphoto) {
+      if (await confirmBox('Delete this photo?', 'It will be removed from the sign.', 'Delete', true)) cmd('delete_photo', { id: d.delphoto });
+      return;
+    }
+    if (d.play && app.libEdit) return;                // editing: taps on a card don't start it
     if (d.net) {
       const n = app.wifiData?.networks.find(x => x.ssid === d.net);
       if (n && !n.connected && app.state.wifi.status !== 'connecting') startJoin(n);
@@ -840,7 +882,7 @@ function bind() {
     if (d.more) { e.stopPropagation(); return videoMenu(d.more); }
     if (d.play) { cmd('play_video', { id: d.play, continue: true }); return closeSheet(); }
     if (d.album) { cmd('play_album', { name: d.album }); return closeSheet(); }
-    if (d.tab) { app.libTab = d.tab; return render(); }
+    if (d.tab) { app.libTab = d.tab; app.libEdit = false; return render(); }
     if (d.mode) return cmd('lights', { mode: d.mode, on: true });
     if (d.color) return cmd('lights', { color: d.color, on: true });
     if (d.tog) return setSetting(d.tog, !get(d.tog));
@@ -865,7 +907,20 @@ function bind() {
     if (d.addk) { app.addKind = d.addk; return render(); }
     switch (d.act) {
       case 'close': return closeSheet();
-      case 'back': return go({ add: 'library', join: 'wifi', wifi: 'settings' }[app.view] || 'home');
+      case 'back': app.libEdit = false; return go({ add: 'library', join: 'wifi', wifi: 'settings', album: 'library' }[app.view] || 'home');
+      case 'libEdit': app.libEdit = !app.libEdit; return render();
+      case 'albumPlay': cmd('play_album', { name: app.album }); return closeSheet();
+      case 'albumShuffle': cmd('play_album', { name: app.album, shuffle: true }); return closeSheet();
+      case 'albumRename': {
+        const n = $('#albumName').value.trim();
+        if (n && n !== app.album) { cmd('rename_album', { name: app.album, new: n }); app.album = n.replace(/[^A-Za-z0-9 _-]/g, '').trim(); }
+        return;
+      }
+      case 'albumDelete':
+        if (await confirmBox('Delete this album?', `${app.album} and all its photos will be removed from the sign.`, 'Delete', true)) {
+          cmd('delete_album', { name: app.album }); app.libEdit = false; go('library');
+        }
+        return;
       case 'wifi': return go('wifi');
       case 'mute': return cmd('mute');
       case 'wake': return cmd('sleep', { on: false });

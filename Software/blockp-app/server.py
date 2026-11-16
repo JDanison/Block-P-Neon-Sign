@@ -74,6 +74,10 @@ class Sign:
         return {"kind": "video", "id": v["id"], "url": v["url"], "title": v["title"], "year": v.get("year"),
                 "thumb_url": v.get("thumb_url")}
 
+    def rotation_items(self):
+        """Videos switched on for "Play all" and startup (Library, Edit mode)."""
+        return [self.video_item(v) for v in self.lib["videos"] if v.get("rotation", True)]
+
     def photo_items(self, albums):
         return [{"kind": "photo", "id": p["id"], "url": p["url"], "title": a["name"], "thumb_url": p["thumb_url"]}
                 for a in albums for p in a["photos"]]
@@ -109,7 +113,7 @@ class Sign:
 
     async def startup_playback(self):
         how = self.settings["playback"]["startup"]
-        vids = [self.video_item(v) for v in self.lib["videos"]]
+        vids = self.rotation_items()
         if how == "videos" and vids:
             await self.play(vids, loop=True)
         elif how == "shuffle_videos" and vids:
@@ -194,7 +198,7 @@ class Sign:
             if idx is not None:
                 await self.play(vids, start=idx, loop=bool(c.get("continue", False)))
         elif t == "play_videos":
-            await self.play([self.video_item(v) for v in self.lib["videos"]], loop=True, shuffle=c.get("shuffle", False))
+            await self.play(self.rotation_items(), loop=True, shuffle=c.get("shuffle", False))
         elif t == "play_album":
             albums = [a for a in self.lib["albums"] if a["name"] == c.get("name")] if c.get("name") else self.lib["albums"]
             await self.play(self.photo_items(albums), loop=True, shuffle=c.get("shuffle", False))
@@ -249,6 +253,23 @@ class Sign:
             await self.rescan()
         elif t == "delete_video":
             library.delete_video(c["id"])
+            await self.rescan()
+        elif t == "video_rotation":
+            library.set_rotation(c["id"], bool(c.get("on")))
+            await self.rescan()
+        elif t == "move_video":
+            library.move_video(c["id"], -1 if int(c.get("delta", 0)) < 0 else 1)
+            await self.rescan()
+        elif t in ("delete_photo", "delete_album", "rename_album"):
+            try:
+                if t == "delete_photo":
+                    library.delete_photo(c["id"])
+                elif t == "delete_album":
+                    library.delete_album(c["name"])
+                else:
+                    library.rename_album(c["name"], c.get("new", ""))
+            except (ValueError, OSError):
+                await self.toast("That couldn’t be changed")
             await self.rescan()
         elif t == "download":
             url = (c.get("url") or "").strip()

@@ -203,6 +203,22 @@ h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: v
 .dl b { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .dl span { color: var(--text-2); font-size: 14px; }
 
+/* library editing */
+.hint { color: var(--text-2); font-size: 15px; margin: 12px 4px 0; line-height: 1.45; }
+.card.dim .th { opacity: .45; }
+.editbar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; padding: 0 12px 12px; }
+.editbar .danger { margin-left: auto; }
+.editbar .rot { flex: 1 0 100%; order: 5; }            /* the Play all switch gets its own row */
+.editbar .round { width: 40px; height: 40px; font-size: 20px; }
+.round.danger { color: #ff6b6b; }
+.rot { flex: 1; min-width: 0; height: 40px; border-radius: 12px; background: var(--tile-hi); font-size: 13px; font-weight: 600;
+  color: var(--text-2); display: flex; align-items: center; justify-content: center; gap: 4px; white-space: nowrap; }
+.rot .ic { font-size: 15px; }
+.rot.on { background: rgba(52, 199, 89, .2); color: #4cd964; }
+.phgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; margin-top: 18px; }
+.ph { aspect-ratio: 1; border-radius: 14px; background: #222 center / cover; position: relative; }
+.ph .round { position: absolute; right: 8px; top: 8px; width: 40px; height: 40px; font-size: 18px; background: rgba(0, 0, 0, .6); }
+
 /* settings */
 .group { background: var(--tile); border-radius: 20px; overflow: hidden; }
 .item { display: flex; align-items: center; gap: 16px; min-height: 64px; padding: 10px 20px; border-bottom: 1px solid var(--line); }
