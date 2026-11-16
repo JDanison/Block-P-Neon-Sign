@@ -147,6 +147,9 @@ function showIdle() {
     idleImg.classList.add('show'); idleVid.classList.remove('show'); idleVid.pause();
   }
 }
+// Night mode switches the HDMI output off, which can hide the page; when it's visible again,
+// re-apply playback so the video or idle loop picks up where it should
+document.addEventListener('visibilitychange', () => { if (!document.hidden && app.state) applyPlayback(); });
 idleVid.addEventListener('error', () => { idleStyle = 'still'; idleImg.src = '/idle.png'; idleImg.classList.add('show'); });
 
 vid.addEventListener('playing', () => {

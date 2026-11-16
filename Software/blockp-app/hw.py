@@ -3,7 +3,8 @@
 request is applied, so dragging a slider never queues up a backlog."""
 import asyncio, os, re, shutil, socket, subprocess, time
 
-ENV = dict(os.environ, XDG_RUNTIME_DIR=os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"))
+ENV = dict(os.environ, XDG_RUNTIME_DIR=os.environ.get("XDG_RUNTIME_DIR", f"/run/user/{os.getuid()}"),
+           WAYLAND_DISPLAY=os.environ.get("WAYLAND_DISPLAY", "wayland-0"))
 
 
 async def run(*cmd, timeout=10) -> str:
@@ -39,12 +40,14 @@ class Latest:
 
 
 class Display:
-    """Brightness (VCP 10) and true power off (VCP D6). D6=04 turns the panel and backlight fully
-    off (confirmed by eye on the Waveshare 8"), while HDMI, the app and touch keep running."""
+    """Brightness over DDC/CI (VCP 10), and true off by switching the HDMI output off.
+    The screen's own DDC power-off (D6=04) only lasted about a second before the backlight came back,
+    because the live HDMI signal woke it. With HDMI off the backlight stays fully dark (confirmed by eye).
+    With no display, touches can't reach the app, so watch_touch() below wakes the sign instead."""
     def __init__(self):
-        self.bus = None
-        # _was_on starts False so the first command after startup always sends "power on": a server
-        # restart during night mode would otherwise leave the panel dark
+        self.bus, self.output = None, "HDMI-A-1"
+        # _was_on starts False so the first command after startup always turns the output on: a server
+        # restart during night mode would otherwise leave the screen dark
         self.brightness, self.on, self._was_on = 80, True, False
         self._setter = Latest(self._apply)
 
@@ -52,19 +55,22 @@ class Display:
         out = await run("ddcutil", "detect", "--brief", timeout=20)
         m = re.search(r"/dev/i2c-(\d+)", out)
         self.bus = m.group(1) if m else None
-        print("screen DDC bus:", self.bus, flush=True)
+        outputs = [l.split()[0] for l in (await run("wlr-randr")).splitlines() if l and not l[0].isspace()]
+        self.output = outputs[0] if outputs else self.output
+        print("screen DDC bus:", self.bus, "| output:", self.output, flush=True)
 
     async def _apply(self, _):
-        # One worker applies the newest wish, so brightness and power commands never collide on the I2C bus
-        if not self.bus:
-            return
+        # One worker applies the newest wish, so power and brightness commands never overlap
         if not self.on:
-            await run("ddcutil", "--bus", self.bus, "setvcp", "D6", "04")
+            await run("wlr-randr", "--output", self.output, "--off")
             self._was_on = False
             return
         if not self._was_on:
-            await run("ddcutil", "--bus", self.bus, "setvcp", "D6", "01")
+            await run("wlr-randr", "--output", self.output, "--on")
+            await run("pkill", "-HUP", "-x", "kanshi")    # re-apply the 180 degree rotation (this kanshi has no kanshictl)
             self._was_on = True
+            if not self.bus:
+                return
             # Waking resets the panel to its own stored brightness and ignores commands for a moment,
             # so set ours, read it back, and retry until it sticks
             for _ in range(5):
@@ -76,7 +82,8 @@ class Display:
                     return
             print("screen brightness didn't stick after waking", flush=True)
             return
-        await run("ddcutil", "--bus", self.bus, "setvcp", "10", str(self.brightness))
+        if self.bus:
+            await run("ddcutil", "--bus", self.bus, "setvcp", "10", str(self.brightness))
 
     def set_brightness(self, value):
         self.brightness = max(1, min(100, int(value)))
@@ -85,6 +92,46 @@ class Display:
     def set_power(self, on: bool):
         self.on = bool(on)
         self._setter.set(None)
+
+
+async def watch_touch(on_touch):
+    """Call on_touch() whenever a finger lands on the touch screen. Reads the touch device directly,
+    so it works even while the HDMI output is off (night mode), when the app can't receive touches.
+    Reconnects if the USB touch cable is unplugged and plugged back in."""
+    import glob, struct, threading
+    EVENT = struct.Struct("llHHi")                  # struct input_event on 64-bit Linux
+    EV_KEY, BTN_TOUCH = 1, 330
+    loop = asyncio.get_running_loop()
+
+    async def in_thread(fn, *args):
+        # A daemon thread, not the default executor: a blocking read there would hold up server shutdown
+        done = loop.create_future()
+        def body():
+            try:
+                fn(*args)
+                loop.call_soon_threadsafe(done.set_result, None)
+            except Exception as e:
+                loop.call_soon_threadsafe(done.set_exception, e)
+        threading.Thread(target=body, daemon=True).start()
+        await done
+
+    def reader(path):
+        with open(path, "rb", buffering=0) as f:
+            while True:
+                data = f.read(EVENT.size * 32)
+                for i in range(0, len(data) - EVENT.size + 1, EVENT.size):
+                    _, _, etype, code, value = EVENT.unpack_from(data, i)
+                    if etype == EV_KEY and code == BTN_TOUCH and value == 1:
+                        loop.call_soon_threadsafe(on_touch)
+
+    while True:
+        devices = glob.glob("/dev/input/by-id/*Waveshare*event*")
+        if devices:
+            try:
+                await in_thread(reader, devices[0])
+            except OSError as e:
+                print("touch screen reader stopped:", e, flush=True)
+        await asyncio.sleep(5)
 
 
 class Audio:

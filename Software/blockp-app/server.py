@@ -376,6 +376,11 @@ async def on_startup(app):
     asyncio.create_task(sign.lights.run(lambda: sign.sleeping))
     asyncio.create_task(sign.schedule_loop())
 
+    def touched():                                   # any touch wakes the sign from night mode
+        if sign.sleeping:
+            asyncio.create_task(sign.set_sleep(False))
+    asyncio.create_task(hw.watch_touch(touched))
+
     async def hardware():
         await sign.display.find_bus()
         sign.display.set_brightness(sign.settings["display"]["brightness"])
@@ -386,10 +391,22 @@ async def on_startup(app):
 
 async def on_shutdown(app):
     sign.save_now()
+    for ws in list(sign.clients):                    # close live connections so shutdown doesn't wait on them
+        await ws.close(code=1001, message=b"server restarting")
+
+
+@web.middleware
+async def revalidate_ui(request, handler):
+    """Make browsers check for a newer app (CSS, JS) on every load. Without this, phones and the screen
+    kept running an old cached version after updates. On the home network the check costs almost nothing."""
+    resp = await handler(request)
+    if request.path.startswith("/ui/") or request.path == "/":
+        resp.headers["Cache-Control"] = "no-cache"
+    return resp
 
 
 def make_app():
-    app = web.Application(client_max_size=300 * 1024 * 1024)
+    app = web.Application(client_max_size=300 * 1024 * 1024, middlewares=[revalidate_ui])
     app.router.add_get("/", index)
     app.router.add_get("/api/ws", ws_handler)
     app.router.add_post("/api/cmd", api_cmd)
@@ -412,4 +429,5 @@ def make_app():
 
 
 if __name__ == "__main__":
-    web.run_app(make_app(), port=PORT, print=lambda *a: print(f"Block P server on port {PORT}", flush=True))
+    web.run_app(make_app(), port=PORT, shutdown_timeout=2,
+                print=lambda *a: print(f"Block P server on port {PORT}", flush=True))

@@ -10,7 +10,7 @@ current() { grep -m1 "^autologin-session=" "$LIGHTDM" | cut -d= -f2; }
 case "$1 $2" in
   "rotate 180"|"rotate normal")
     sed -i -E "s/transform [a-z0-9-]+/transform $2/" "$KANSHI"
-    kanshictl reload && echo "Screen is now $2 (touch follows it)." ;;
+    pkill -HUP -x kanshi && echo "Screen is now $2 (touch follows it)." ;;
   "kiosk on")
     session blockp-kiosk
     echo "Kiosk on. Restarting the screen session..."; sudo systemctl restart lightdm ;;
