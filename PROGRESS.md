@@ -56,20 +56,19 @@ Proportions come from the band's formation, counted in people. One person is 14.
 | Kiosk | Done November 15, 2026. The Pi boots in about 20 seconds straight into the sign app, with no desktop. On the Pi, run `blockp` to see the commands |
 | Touch app | First version done November 15, 2026 (`Software/blockp-app`). Touching the screen drops down a frosted-glass control center with now playing, brightness, volume, lights, video and photo library, night mode, a phone QR code, and settings. Phones and PCs get the same controls at `blockp.local` |
 | Audio | Your speakers work with the USB audio board |
-| Control software | Touch screen done. Phone and PC layouts work but still need polish |
+| Control software | Done. The touch screen, plus phone, tablet and desktop layouts with Add to Home Screen. There's also library editing, a downloader update button, and backup and restore |
 | Video and photo player | Done. It plays videos and photo slideshows with slow pan and zoom, and shows an animated idle screen. The downloader saves YouTube links as 720p30, the format measured to play smoothly under the frosted menu |
 | Enclosure CAD | Current design done in build123d for the Bambu H2C. Automated checks cover collisions, the front face, wire bend radius, wire clashes and zip-tie clips. Assembly is planned as mount electronics to the back cover, connect, then fold closed, with detailed speaker, USB dongle, Pi and N300 case models. Some sizes are still estimates |
 | Boot and reliability | Done November 15, 2026. Logs are kept in RAM, the hardware watchdog is on, automatic updates are off, saved files survive power cuts, and the Pi is renamed to `blockp` |
 
 ## Next steps
 
-1. Software: polish the phone, tablet and desktop pages (with Add to Home Screen), then library management, a downloader update button, and settings backup.
-2. Send the YouTube show links by year, plus any photos. They're tracked in `Software/show-links.md`.
-3. Print the test pieces in `Hardware/CAD/print/test_pieces` to check the diffuser and screw hole size.
-4. Measure the screen board, speakers and USB dongle, then update the CAD model.
-5. Order the remaining parts in `Hardware/BOM.md`.
-6. Wire the LED strip and install its driver.
-7. Test everything together on the bench, including a heat test inside the closed enclosure, before printing the full sign.
+1. Send the YouTube show links by year, plus any photos. They're tracked in `Software/show-links.md`.
+2. Print the test pieces in `Hardware/CAD/print/test_pieces` to check the diffuser and screw hole size.
+3. Measure the screen board, speakers and USB dongle, then update the CAD model.
+4. Order the remaining parts in `Hardware/BOM.md`.
+5. Wire the LED strip and install its driver.
+6. Test everything together on the bench, including a heat test inside the closed enclosure, before printing the full sign.
 
 ## Open questions
 

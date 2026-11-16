@@ -148,13 +148,15 @@ def scan() -> dict:
     return {"videos": videos(), "albums": albums()}
 
 
-def edit_video(vid: str, title=None, year=None):
+def edit_video(vid: str, title=None, year=None, order=None):
     f = VIDEOS / f"{vid}.json"
     e = json.loads(f.read_text(encoding="utf-8"))
     if title is not None:
         e["title"] = str(title)[:120]
     if year is not None:
         e["year"] = int(year) if str(year).strip() else None
+    if order is not None:
+        e["order"] = int(order)
     _write_entry(vid, e)
 
 

@@ -180,6 +180,7 @@ def system_info() -> dict:
         "disk_total_gb": round(disk.total / 1e9, 1),
         "uptime_h": round(up / 3600, 1),
         "time": time.strftime("%Y-%m-%d %H:%M"),
+        "ytdlp": cmd(os.path.join(os.path.dirname(__import__("sys").executable), "yt-dlp"), "--version"),
     }
 
 

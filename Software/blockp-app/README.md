@@ -41,6 +41,12 @@ The kiosk session itself, including screen rotation, auto-login and the `blockp`
 - **Driver:** install with `~/blockp/venv/bin/pip install rpi_ws281x`. `lights.py` finds it on the next start (`blockp restart-server`). The library needs root access to the PWM hardware, so the service may need to run as root, or use the SPI pin instead. Check this when the strip is wired.
 - **Gold:** the "Gold" color is the one you tuned on the real strip in the old `goldshimmer.py`, 195:65:0, scaled to full. That file's shimmer became the **Shimmer** effect.
 
+## Library, updates and backup
+
+- **Library → Edit:** reorder each season with the arrows. **Play all** switches each video in or out of Play all and startup playback; tapping a video still plays it either way. Tapping an album opens it to play, rename (on a phone or PC), delete the album, or delete single photos.
+- **Settings → Downloader → Update:** installs the newest yt-dlp and restarts the server (under a second). Use it when YouTube downloads start failing; automatic updates are off on purpose.
+- **Settings → Backup** (on a phone or PC): **Download backup** saves your settings and the video list with source links. **Restore** puts them back and re-downloads missing videos, one at a time. **Download photos** zips every album.
+
 ## Wi-Fi
 
 To change networks, go to **Settings**, then **Wi-Fi**, then **Change network**. It lists nearby networks, and you type the password on the on-screen keyboard. Saved networks rejoin with no typing, hidden networks are under **Other network**, and **Forget** removes old ones. The sign uses NetworkManager through `nmcli`, which needs `../Pi Setup/50-blockp-network.rules` installed.

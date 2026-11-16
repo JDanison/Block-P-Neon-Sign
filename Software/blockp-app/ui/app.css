@@ -183,6 +183,9 @@ body.remote .handle { display: none; }
 .btn.gold { background: var(--gold-hi); color: #1a1408; }
 .btn.danger { color: #ff6b6b; }
 .btn .ic { font-size: 20px; }
+a.btn { text-decoration: none; color: inherit; }
+label.btn { cursor: pointer; }
+.btn:disabled { opacity: .6; }
 h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-2); margin: 26px 4px 12px; font-weight: 700; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 18px; }
 .card { background: var(--tile); border-radius: 20px; overflow: hidden; position: relative; text-align: left; }

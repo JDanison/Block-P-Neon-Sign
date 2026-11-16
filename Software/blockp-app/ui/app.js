@@ -482,7 +482,7 @@ function libraryView() {
   if (tab === 'videos') {
     const vids = app.lib.videos;
     const dls = app.state.downloads.map(d => `<div class="dl">${icon(d.status === 'failed' ? 'x' : 'download')}<div class="grow">
-      <b>${esc(d.title)}</b><span>${d.status === 'failed' ? esc('Failed: ' + (d.error || '')) : `${esc(d.status)} ${Math.round(d.progress * 100)}%`}</span>
+      <b>${esc(d.title)}</b><span>${d.status === 'failed' ? esc('Failed. If downloads keep failing, update the downloader in Settings.') : `${esc(d.status)} ${Math.round(d.progress * 100)}%`}</span>
       ${d.status !== 'failed' ? `<div class="bar"><i style="width:${(d.progress * 100).toFixed(0)}%"></i></div>` : ''}</div>
       ${d.status === 'failed' ? `<button class="round" data-clear="${d.key}">${icon('x')}</button>` : ''}</div>`).join('');
     let groups = '';
@@ -650,6 +650,22 @@ function settingsView() {
     <h3>Night schedule</h3><div class="group">
       ${tog('Turn off at night', 'schedule.enabled', 'The screen and lights go dark, and wake on touch')}
       ${time('Turn off at', 'schedule.off')}${time('Turn on at', 'schedule.on')}
+    </div>
+    <h3>Downloader</h3><div class="group">
+      <div class="item"><div class="k">YouTube downloader<small>${esc(app.state.updater.message ||
+        'YouTube changes often. If downloads start failing, update this.')}</small></div>
+        <div class="v">${esc(sys?.ytdlp || '')}</div>
+        <button class="btn" data-act="updateDl" ${app.state.updater.status === 'running' ? 'disabled' : ''}>
+          ${app.state.updater.status === 'running' ? '<div class="spin" style="width:20px;height:20px"></div>Updating' : `${icon('download')}Update`}</button></div>
+    </div>
+    <h3>Backup</h3><div class="group">
+      ${SCREEN ? `<div class="item"><div class="k">Back up from your phone or computer<small>Open ${esc((sys?.hostname || 'blockp') + '.local')}, go to Settings, then Backup. The backup has your settings and video list; restoring it re-downloads any missing videos.</small></div></div>`
+      : `<div class="item"><div class="k">Settings and video list<small>A small file. Restoring it puts your settings back and re-downloads any missing videos from their links.</small></div>
+          <a class="btn" href="/api/backup" download>${icon('download')}Download backup</a></div>
+        <div class="item"><div class="k">All photos<small>Every album as one zip file</small></div>
+          <a class="btn" href="/api/photos.zip" download>${icon('image')}Download photos</a></div>
+        <div class="item"><div class="k">Restore from a backup<small id="restoreMsg">Choose a blockp-backup file</small></div>
+          <label class="btn">${icon('rotate-cw')}Restore<input type="file" id="restoreFile" accept=".json,application/json" hidden></label></div>`}
     </div>
     <h3>Network</h3><div class="group">
       <div class="item"><div class="k">Wi-Fi<small>${esc(sys?.wifi || 'Not connected')}</small></div>
@@ -923,6 +939,7 @@ function bind() {
         return;
       case 'wifi': return go('wifi');
       case 'mute': return cmd('mute');
+      case 'updateDl': return cmd('update_downloader');
       case 'wake': return cmd('sleep', { on: false });
       case 'wifiRefresh': return loadWifi();
       case 'wifiOther': return startJoin(null);
@@ -972,6 +989,16 @@ function bind() {
     pressKey(k.dataset.key);
   });
   $$('[data-input]').forEach(i => i.addEventListener('input', () => { app.join[i.dataset.input] = i.value; }));
+  $('#restoreFile')?.addEventListener('change', async e => {
+    const f = e.target.files[0], msg = $('#restoreMsg');
+    if (!f) return;
+    if (!await confirmBox('Restore this backup?', 'Your settings will be replaced, and missing videos will download again.', 'Restore')) return;
+    msg.textContent = 'Restoring…';
+    try {
+      const r = await (await fetch('/api/restore', { method: 'POST', body: await f.text() })).json();
+      msg.textContent = r.ok ? `Restored${r.downloading ? `, downloading ${r.downloading} video${r.downloading === 1 ? '' : 's'}` : ''}.` : r.error;
+    } catch { msg.textContent = 'Restore failed. Try again.'; }
+  });
 }
 
 async function videoMenu(id) {

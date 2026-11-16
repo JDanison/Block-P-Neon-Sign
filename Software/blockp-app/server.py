@@ -1,7 +1,7 @@
 """Block P sign server: one source of truth for playback, library, lights, brightness, volume and
 settings. The touch screen (Chromium kiosk, /?screen=1) and any phone or PC (/) connect over a
 WebSocket and stay in sync. Run: python server.py  (port 80 under systemd, BLOCKP_PORT to change)."""
-import asyncio, io, json, os, random, socket, time
+import asyncio, io, json, os, random, socket, sys, time, zipfile
 from pathlib import Path
 
 import qrcode, qrcode.image.svg
@@ -24,6 +24,8 @@ class Sign:
         self.sleeping = False
         self.wifi = {"status": "idle", "ssid": None, "message": None}
         self.downloads = {}
+        self.updater = {"status": "idle", "message": None}
+        self._dl_lock = None                     # one download at a time (restores can queue many)
         self.lib = {"videos": [], "albums": []}
         self.clients, self.light_watchers = set(), set()
         self.display, self.audio = hw.Display(), hw.Audio()
@@ -35,7 +37,7 @@ class Sign:
     def public_state(self):
         return {"player": self.player, "settings": self.settings, "sleeping": self.sleeping, "wifi": self.wifi,
                 "downloads": list(self.downloads.values()), "version": VERSION,
-                "lights_connected": self.lights.strip is not None}
+                "lights_connected": self.lights.strip is not None, "updater": self.updater}
 
     async def send(self, msg, to=None):
         data = json.dumps(msg)
@@ -146,7 +148,7 @@ class Sign:
     async def start_download(self, url, title=None, year=None):
         key = f"dl{int(time.time() * 1000)}"
         self.downloads[key] = {"key": key, "url": url, "title": title or url, "progress": 0.0,
-                               "status": "starting", "error": None}
+                               "status": "waiting", "error": None}
         await self.push_state()
         loop = asyncio.get_running_loop()
         last = [0.0]
@@ -162,13 +164,67 @@ class Sign:
             loop.call_soon_threadsafe(apply)
 
         try:
-            entry = await loop.run_in_executor(None, lambda: downloader.download(url, title, year, None, progress))
+            self._dl_lock = self._dl_lock or asyncio.Lock()
+            async with self._dl_lock:
+                self.downloads[key]["status"] = "downloading"
+                entry = await loop.run_in_executor(None, lambda: downloader.download(url, title, year, None, progress))
             self.downloads.pop(key, None)
             await self.rescan()
             await self.toast(f"Added “{entry['title']}”")
         except Exception as e:
             self.downloads[key].update(status="failed", error=str(e)[:200])
         await self.push_state()
+
+    # ---------- downloader update ----------
+    async def update_downloader(self):
+        """Install the newest yt-dlp (YouTube changes often and breaks old versions), then restart the
+        server so the new version loads. Automatic updates are off, so this is the update path."""
+        if self.updater["status"] == "running":
+            return
+        self.updater = {"status": "running", "message": "Checking for a newer downloader…"}
+        await self.push_state()
+        ytdlp = str(Path(sys.executable).parent / "yt-dlp")
+        before = (await hw.run(ytdlp, "--version")).strip()
+        out = await hw.run(sys.executable, "-m", "pip", "install", "--quiet", "--upgrade", "yt-dlp[default]", timeout=600)
+        after = (await hw.run(ytdlp, "--version")).strip()
+        if after and after != before:
+            self.updater = {"status": "done", "message": f"Updated from {before} to {after}. Restarting…"}
+            await self.push_state()
+            self.save_now()
+            asyncio.get_running_loop().call_later(2, os._exit, 0)   # systemd restarts the server in under a second
+        elif after and "error" not in out.lower():
+            self.updater = {"status": "done", "message": f"Already up to date ({after})"}
+        else:
+            self.updater = {"status": "failed", "message": "Couldn’t update. Check the sign’s internet connection."}
+        await self.push_state()
+
+    # ---------- backup ----------
+    def backup(self):
+        return {"blockp_backup": 1, "created": time.strftime("%Y-%m-%d %H:%M"), "settings": self.settings,
+                "videos": [{k: v.get(k) for k in ("id", "title", "year", "source", "order", "rotation")}
+                           for v in self.lib["videos"]],
+                "albums": [a["name"] for a in self.lib["albums"]]}
+
+    async def restore(self, data):
+        if data.get("blockp_backup") != 1:
+            raise ValueError("not a Block P backup")
+        self.settings = S.patch(self.settings, data.get("settings", {}))
+        self.save_now()
+        have = {v["id"] for v in self.lib["videos"]}
+        missing = 0
+        for v in data.get("videos", []):
+            if v.get("id") in have:
+                library.edit_video(v["id"], v.get("title"), v.get("year") if v.get("year") is not None else "",
+                                   order=v.get("order"))
+                library.set_rotation(v["id"], v.get("rotation", True))
+            elif str(v.get("source") or "").startswith("http"):
+                missing += 1
+                asyncio.create_task(self.start_download(v["source"], v.get("title"), v.get("year")))
+        await self.rescan()
+        self.display.set_brightness(self.settings["display"]["brightness"])
+        self.audio.set(self.settings["audio"]["volume"], self.settings["audio"]["muted"])
+        await self.push_state()
+        return missing
 
     # ---------- Wi-Fi ----------
     async def join_wifi(self, ssid, password, hidden):
@@ -286,6 +342,9 @@ class Sign:
             await hw.wifi_forget(c.get("name", ""))
             await self.toast("Network forgotten")
             return
+        elif t == "update_downloader":
+            asyncio.create_task(self.update_downloader())
+            return
         elif t == "clear_download":
             self.downloads.pop(c.get("key"), None)
         elif t == "rescan":
@@ -349,6 +408,35 @@ async def api_system(request):
     info = await asyncio.get_running_loop().run_in_executor(None, hw.system_info)
     info["videos"], info["albums"] = len(sign.lib["videos"]), len(sign.lib["albums"])
     return web.json_response(info)
+
+
+async def api_backup(request):
+    body = json.dumps(sign.backup(), indent=2)
+    name = f"blockp-backup-{time.strftime('%Y-%m-%d')}.json"
+    return web.Response(text=body, content_type="application/json",
+                        headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
+async def api_restore(request):
+    try:
+        missing = await sign.restore(json.loads(await request.text()))
+    except (ValueError, json.JSONDecodeError) as e:
+        return web.json_response({"ok": False, "error": "That file isn’t a Block P backup."}, status=400)
+    await sign.toast("Backup restored" + (f", downloading {missing} video{'s' if missing != 1 else ''}" if missing else ""))
+    return web.json_response({"ok": True, "downloading": missing})
+
+
+async def api_photos_zip(request):
+    """All photo albums as one zip (originals). Built on the SD card, not in RAM, since it can be large."""
+    out = library.CACHE / "photos-backup.zip"
+    def build():
+        with zipfile.ZipFile(out, "w", zipfile.ZIP_STORED) as z:          # photos are already compressed
+            for f in sorted(library.PHOTOS.rglob("*")):
+                if f.is_file():
+                    z.write(f, f.relative_to(library.PHOTOS))
+    await asyncio.get_running_loop().run_in_executor(None, build)
+    return web.FileResponse(out, headers={"Content-Disposition":
+                                          f'attachment; filename="blockp-photos-{time.strftime("%Y-%m-%d")}.zip"'})
 
 
 async def api_wifi(request):
@@ -436,6 +524,9 @@ def make_app():
     app.router.add_get("/api/qr.svg", api_qr)
     app.router.add_get("/api/wifi", api_wifi)
     app.router.add_post("/api/upload", api_upload)
+    app.router.add_get("/api/backup", api_backup)
+    app.router.add_post("/api/restore", api_restore)
+    app.router.add_get("/api/photos.zip", api_photos_zip)
     app.router.add_get("/api/lights/layout", lights_layout)
     app.router.add_get("/idle.mp4", idle_file("idle.mp4"))
     app.router.add_get("/idle.png", idle_file("idle.png"))
