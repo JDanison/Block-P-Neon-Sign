@@ -54,7 +54,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
 <div class="wrap">
   <header class="stack">
     <h1>Block P CAD</h1>
-    <p>The 8" build for the Bambu H2C, about 15.1 × 12.7 × 2.2 in. Pick <strong>Build guide</strong> above the model to see the assembly order. The LED strip is modeled as a standard 10 mm WS2812B until you confirm yours, and some other sizes are estimates until your parts arrive. Drag to rotate, scroll or use + and − to zoom, and right-drag to move.</p>
+    <p>The 8" build for the Bambu H2C, about 15.1 × 12.7 × 2.2 in. Pick <strong>Build guide</strong> above the model to see the assembly order. The LED strip is the 5 mm FCOB WS2812B at 160 LEDs per meter (204 LEDs), with sections ending on cut marks assumed at every LED until you measure yours, and some other sizes are estimates until your parts arrive. Drag to rotate, scroll or use + and − to zoom, and right-drag to move.</p>
   </header>
 
   <section class="stack">
@@ -106,7 +106,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
       <tbody>
         <tr><td>HDMI</td><td>Flat HDMI ribbon</td><td>The Pi's micro-HDMI port beside the USB-C port (HDMI 0)</td></tr>
         <tr><td>Power USB-C</td><td>USB-C power lead</td><td>The 5V junction</td></tr>
-        <tr><td>Touch USB-C</td><td>1 ft right-angle USB cable</td><td>The Pi's upper USB 2.0 port</td></tr>
+        <tr><td>Touch USB-C</td><td>1 ft cable, straight USB-A to side-angle USB-C</td><td>The Pi's upper USB 2.0 port</td></tr>
       </tbody>
     </table></div>
     <p class="note">The speaker and button headers, audio jack and backlight switch stay unused. The picture and touch are rotated in software on the Pi.</p>
@@ -128,14 +128,15 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
       <thead><tr><th>File</th><th>Filament</th><th>Size (mm)</th><th>Job</th></tr></thead>
       <tbody>
         <tr><td><code>shell_upper</code></td><td>Black</td><td>321 × 252 × 55</td><td>Top of the sign, screen window, speaker pockets, vents</td></tr>
-        <tr><td><code>shell_lower</code></td><td>Black</td><td>113 × 139 × 55</td><td>Lower stem and foot, power jack</td></tr>
+        <tr><td><code>shell_lower</code></td><td>Black</td><td>113 × 139 × 55</td><td>Lower stem and foot, with the hole for the power cord's plug</td></tr>
         <tr><td><code>diffuser_upper</code></td><td>Translucent white</td><td>321 × 252 × 17</td><td>Glowing outline, glued over the LED channel</td></tr>
         <tr><td><code>diffuser_lower</code></td><td>Translucent white</td><td>113 × 139 × 17</td><td>Same, for the lower section</td></tr>
         <tr><td><code>cover_upper</code></td><td>Black</td><td>315 × 275 × 24</td><td>Back panel, wall keyholes, Pi and board mounts</td></tr>
         <tr><td><code>cover_lower</code></td><td>Black</td><td>107 × 109 × 8</td><td>Back panel for the stem and foot</td></tr>
         <tr><td>4 <code>screen_clip</code> files</td><td>Black</td><td>33 × 16 × 4</td><td>Hold the screen by its corners, leaving the cable paths open</td></tr>
         <tr><td><code>stem_splice</code></td><td>Black</td><td>25 × 40 × 4</td><td>Joins the two shell sections inside the stem</td></tr>
-        <tr><td><code>audio_strap</code></td><td>Black</td><td>48 × 12 × 3</td><td>Holds the USB dongle in its cradle</td></tr>
+        <tr><td><code>audio_strap</code></td><td>Black</td><td>45 × 12 × 3</td><td>Holds the USB dongle in its cradle</td></tr>
+        <tr><td><code>jack_strap</code></td><td>Black</td><td>38 × 12 × 3</td><td>Holds the DC jack in its pocket on the lower cover</td></tr>
         <tr><td><code>pi_bracket_left</code>, <code>pi_bracket_low</code>, <code>pi_bracket_high</code></td><td>Black</td><td>3 mm thick</td><td>Hold the Pi case by its top screw positions</td></tr>
       </tbody>
     </table></div>
@@ -146,12 +147,12 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
     <div class="stack">
       <h2>How it goes together</h2>
       <ol>
-        <li>Cut the strip into 12 sections, one for each straight wall, and stick them to the channel wall. Solder short 3-wire jumpers across the 11 corners, following the arrows on the strip. The two ends finish at the wire holes beside the stem.</li>
+        <li>Cut the strip into 12 sections, one for each straight wall, cutting only at the strip's cut marks, and stick them to the channel wall. Solder short 3-wire jumpers across the 11 corners, following the arrows on the strip. The two ends finish at the wire holes beside the stem.</li>
         <li>Join the shell sections with the stem splice and 4 M3 screws, and glue on the diffusers.</li>
-        <li>Hook each speaker's two front tabs under the pads, drivers facing the grille, then lower it onto the two rear posts and fit 2 M3 × 12 mm screws. Run a screwdriver in along the inside with the cover off. Do this before fitting the screen.</li>
+        <li>Hook each speaker's two front tabs under the pads, drivers facing the grille, then lower it onto the two rear posts and fit 2 M3 × 10 mm screws. Run a screwdriver in along the inside with the cover off. Do this before fitting the screen.</li>
         <li>Set the screen in from behind, rotated 180° so its ports face down, and screw on the 4 corner clips. The picture is flipped back in software.</li>
         <li>Assemble the Pi in its case, using the kit's extra brass spacers on top. Set it in its corner stops on the upper cover and fit the three brackets. Add the converter and level shifter. Set the USB dongle in its cradle, screw the strap over it, and connect it to the Pi with its short USB cable. Then route and zip-tie the wires.</li>
-        <li>Fit the power jack through the foot, connect everything and test it.</li>
+        <li>Set the DC jack in its pocket on the lower cover and screw its strap on. Connect its screw terminals to the 12V leads, connect everything and test it.</li>
         <li>Screw on both covers. The upper cover bridges the shell joint for strength.</li>
         <li>Hang it on 2 wall screws, 201 mm apart, using the keyholes.</li>
       </ol>
@@ -164,7 +165,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <li><strong>Speakers:</strong> Two rear screws and two front hooks hold each one. The grille sits about 9 mm below the speaker face, and a 16 mm gap between the speakers gives their cables room.</li>
         <li><strong>Raspberry Pi:</strong> The N300 case has no mounting holes underneath, so three printed brackets hold it from its top spacers, with corner stops around the case. Its fins face the back cover vents.</li>
         <li><strong>USB dongle:</strong> It has no mounting holes, so a low cradle and screwed strap hold it, with its 4-pin header facing the speakers.</li>
-        <li><strong>LEDs:</strong> 68 LEDs sit on the outer wall of a 10 mm deep channel, facing out, about 6 mm behind the diffuser. Each corner has room for a soldered jumper.</li>
+        <li><strong>LEDs:</strong> 204 LEDs on a 5 mm, 160 per meter FCOB strip sit on the wall of a 9 mm deep channel, facing out, about 7 mm behind the diffuser. Each corner keeps 4 mm of bare wall for the jumper pads, and the two power ends keep more so their wires can bend into the pads.</li>
         <li><strong>Cooling:</strong> Cool air enters low, through the bottom of the foot, the stem walls, the underside and the lower right wall. It rises past the electronics and leaves through the top wall and upper side walls, so the airflow doesn't depend on the gap behind the sign.</li>
         <li><strong>Servicing:</strong> The covers come off with screws, so the wiring stays reachable. The diffusers are glued on.</li>
       </ul>
@@ -179,18 +180,19 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
         <li>Speakers, which you already have: length, width, thickness, tab hole size and spacing, and how far the tabs sit from the face</li>
         <li>Converter: length, width, thickness and mounting holes</li>
         <li>USB dongle, which you already have: total length, body length, width and thickness</li>
-        <li>Power jack: hole size and thread</li>
-        <li>LED strip: width, LEDs per meter, total length and thickness</li>
+        <li>DC jack: body size, and the plug overmold's diameter (the foot hole is 11 mm)</li>
+        <li>LED strip: spacing of the cut marks, total length and thickness</li>
         <li>Pi in its case: length, width, thickness and top-of-USB height</li>
       </ul>
     </div>
     <div class="stack">
       <h2>Small hardware</h2>
       <ul>
-        <li>44 M3 × 10 mm self-tapping screws, the only screw size in the sign</li>
+        <li>46 M3 × 10 mm self-tapping screws, the only screw size in the sign</li>
         <li>10 small zip ties, 3.6 mm wide or narrower, for the 10 clips on the back cover</li>
         <li>2 wall screws with heads under 9 mm, shafts under 5 mm</li>
-        <li>Thin wire for 33 corner jumper wires, 3 at each of 11 corners. Stranded 24 AWG or thinner bends best, and the tight corner under the top-left notch needs 28 AWG</li>
+        <li>Wire for 33 corner jumpers, 3 at each of 11 corners. Use stranded 26 AWG, because the strip's power passes through these jumpers, and 28 AWG at the tight corner under the top-left notch</li>
+        <li>22 AWG red and black for the level shifter's 5V and ground from the junction</li>
         <li>4 stick-on rubber bumpers, about 8 mm tall, to hold the back off the wall</li>
         <li>CA glue for the diffusers, plus thin foam tape for the dongle strap</li>
       </ul>
@@ -225,7 +227,7 @@ const GROUPS = [
   {id:'shell', label:'Shell', match:p=>p.name.startsWith('shell')},
   {id:'diffuser', label:'Diffuser', match:p=>p.name.startsWith('diffuser')},
   {id:'cover', label:'Back covers', match:p=>p.name.startsWith('cover')},
-  {id:'hardware', label:'Clamps', match:p=>p.name.startsWith('screen_clip')||p.name==='stem_splice'||p.name==='audio_strap'||p.name.startsWith('pi_bracket')},
+  {id:'hardware', label:'Clamps', match:p=>p.name.startsWith('screen_clip')||p.name==='stem_splice'||p.name==='audio_strap'||p.name==='jack_strap'||p.name.startsWith('pi_bracket')},
   {id:'screen', label:'Screen', match:p=>p.name.startsWith('Screen')},
   {id:'inside', label:'Electronics', match:p=>p.kind==='part'||p.kind==='led'},
   {id:'wires', label:'Wires', match:()=>false},
@@ -241,12 +243,12 @@ function explodeOffset(p){
   if(p.name.startsWith('cover')) return [0,up,-150];
   if(p.name.startsWith('screen_clip')) return [0,0,-40];
   if(p.name==='stem_splice') return [0,0,-20];
-  if(p.name==='audio_strap') return [0,0,-60];
+  if(p.name==='audio_strap'||p.name==='jack_strap') return [0,0,-60];
   if(p.name.startsWith('pi_bracket')) return [0,0,-70];
   if(p.name.startsWith('Screen')) return [0,0,-14];
   if(STRIPS.includes(p.name)) return [0,0,55];
   if(p.name.startsWith('Speaker')) return [0,-8,-60];
-  if(p.name==='Power jack') return [0,-55,0];
+  if(p.name==='Power jack') return [0,0,-60];
   if(COVER_MOUNTED.includes(p.name)) return [0,0,-100];
   return [0,0,0];
 }
@@ -346,12 +348,12 @@ try{
   let explode=0;
   const BACK=new THREE.Vector3(.12,.1,-1), FRONT=new THREE.Vector3(.25,.12,1);
   const hold=['cover_upper','pi_bracket_left','pi_bracket_low','pi_bracket_high','audio_strap','Pi case bottom','Pi case top','Pi board','Pi connectors','Pi brass spacers','Cable plugs','Converter','USB audio dongle','Speaker plug','USB cable socket','Level shifter board','Level shifter parts','5V junction'];
-  const inner=['5V converter to junction','5V to Pi','Pi GPIO to shifter','USB to dongle'];
+  const inner=['5V converter to junction','5V to Pi','5V to level shifter','Pi GPIO to shifter','USB to dongle'];
   const STEPS=[
     {title:'Join the two shell sections',text:'Lay both shell sections face down on a soft cloth. Line up the stem joint and screw on the splice with 4 M3 × 10 mm screws.',
      add:['shell_upper','shell_lower','stem_splice'],from:{stem_splice:[0,0,-90]},dir:BACK,dist:1.0,
      tips:['Glue the joint too if you want it stronger. It also helps hide the seam line on the face.']},
-    {title:'Stick on the LED strip',text:'Turn the shell face up. Cut the strip into 12 sections and stick them to the channel wall, with the arrows all pointing the same way. Solder 3 jumpers across each of the 11 corners.',
+    {title:'Stick on the LED strip',text:'Turn the shell face up. Cut the strip into 12 sections, only at its cut marks, and stick them to the channel wall with the arrows all pointing the same way. Solder 3 jumpers across each of the 11 corners: 26 AWG, and 28 AWG at the tight corner under the top-left notch.',
      add:['LED strip','LED chips'],from:{'LED strip':[0,0,70],'LED chips':[0,0,70]},wires:['LED corners'],dir:FRONT,dist:1.0,
      tips:['Solder long leads to both strip ends and feed them through the two holes at the inside corner by the stem.','Test the strip now, before the diffuser goes on. The diffusers are glued, so this is the last easy chance to fix a joint.']},
     {title:'Glue on the diffusers',text:'Fit both diffuser sections over the LED channel and glue them along the overlap.',
@@ -359,13 +361,11 @@ try{
     {title:'Fit the speakers',text:'Turn the shell face down again. Slide each speaker in from the back, with the drivers facing the grille and the front tabs under the pads. Then screw down the two rear tabs with M3 × 10 mm screws.',
      add:['Speaker left','Speaker right'],from:{'Speaker left':[0,0,-90],'Speaker right':[0,0,-90]},dir:new THREE.Vector3(.1,.75,-1),dist:.72,focus:[201,190,0],
      tips:['Do this before the screen. A short screwdriver can reach down inside while the space is empty.']},
-    {title:'Fit the power jack',text:'Push the jack through the hole in the bottom of the foot and tighten its nut from inside. Solder on the 12V leads, long enough to reach the converter.',
-     add:['Power jack'],from:{'Power jack':[0,-60,0]},dir:new THREE.Vector3(.3,-.5,-1),dist:.5,focus:[57,50,0]},
     {title:'Fit the screen',text:'Set the screen in from the back, rotated 180° so its ports face down. Screw on the 4 corner clips with M3 × 10 mm screws.',
      add:['Screen','Screen board','Screen ports','Screen ribbon','screen_clip_top_left','screen_clip_top_right','screen_clip_bottom_left','screen_clip_bottom_right'],
      from:{Screen:[0,0,-90],'Screen board':[0,0,-90],'Screen ports':[0,0,-90],'Screen ribbon':[0,0,-90],screen_clip_top_left:[0,0,-50],screen_clip_top_right:[0,0,-50],screen_clip_bottom_left:[0,0,-50],screen_clip_bottom_right:[0,0,-50]},dir:BACK,dist:1.0,
      tips:['Tighten by hand until snug. Every screw threads straight into the plastic.']},
-    {title:'Plug the cables into the screen',text:'Plug in the HDMI ribbon, the USB-C power lead and the right-angle touch cable. Leave their other ends loose for now.',
+    {title:'Plug the cables into the screen',text:'Plug in the HDMI ribbon (straight plugs at both ends), the USB-C power lead and the side-angle USB-C end of the touch cable. Leave their other ends loose for now.',
      add:['Screen plugs'],from:{'Screen plugs':[0,-45,0]},dir:BACK,dist:.8,focus:[175,275,0],
      tips:['The screen ports get covered later, so this is the only time they are easy to reach.','The back view shows the screen upside down. That is correct.']},
     {title:'Build up the back cover on your bench',text:'With the cover on the bench, mount the Pi in its case, the converter, the 5V junction, the level shifter and the USB dongle. Wire everything that stays on the cover.',
@@ -373,12 +373,12 @@ try{
      tips:['This is your idea: everything mounts to the back first.','Fit the microSD card before the Pi goes in its case, or check that you can still reach its slot.','Finish every solder joint and tie down these wires now.']},
     {title:'Connect the cover to the shell',text:'Stand the cover on its long bottom edge right behind the shell, close enough for the shortest cables to reach. Connect the cables between the two halves.',
      add:[],hold:true,dir:new THREE.Vector3(1,.3,.1),dist:1.25,focus:[170,230,-60],
-     tips:['1. HDMI ribbon into the Pi. Connect this first, because it is the shortest.','2. Screen power and touch cable.','3. Speaker plug into the dongle.','4. LED 5V at both ends, LED data, and 12V to the converter.','The model shows solid parts, so it cannot show how the loose cables flex here. Try this step on the bench before printing the full sign.']},
+     tips:['1. HDMI ribbon into the Pi. Connect this first, because it is the shortest.','2. Screen power and the touch cable (straight USB-A end into the Pi).','3. Speaker plug into the dongle.','4. LED 5V at both ends and LED data. The 12V leads from the jack connect at the last step, when the lower cover goes on.','The model shows solid parts, so it cannot show how the loose cables flex here. Try this step on the bench before printing the full sign.']},
     {title:'Test it with the cover open',text:'Power it up before closing anything. Check the video, sound, touch and LEDs, then run vcgencmd get_throttled to confirm there are no low-voltage warnings.',
      add:[],hold:true,dir:new THREE.Vector3(1,.3,.1),dist:1.25,focus:[170,230,-60]},
-    {title:'Fold the cover closed',text:'Unplug the power. Fold the cover closed, guiding the loose wires into the channels behind the screen and above the speakers. Check that nothing is pinched, then fit the lower cover and all the cover screws.',
-     add:['cover_lower'],from:{...Object.fromEntries(hold.map(n=>[n,[0,0,-170]])),cover_lower:[0,0,-170]},wires:['*'],dir:BACK,dist:1.0,
-     tips:['The wires appear here in their final positions.','Do not force the cover. If it will not seat, a wire is in the way.']},
+    {title:'Fold the cover closed',text:'Unplug the power. Fold the cover closed, guiding the loose wires into the channels behind the screen and above the speakers. Then set the DC jack in its pocket on the lower cover, opening facing down, and screw its strap over it with 2 M3 × 10 mm screws. Connect the 12V leads to its screw terminals, then fit the lower cover and all the cover screws. The power cord plugs in through the hole in the bottom of the foot.',
+     add:['cover_lower','Power jack','jack_strap'],from:{...Object.fromEntries(hold.map(n=>[n,[0,0,-170]])),cover_lower:[0,0,-170],'Power jack':[0,0,-170],jack_strap:[0,0,-200]},wires:['*'],dir:BACK,dist:1.0,
+     tips:['The wires appear here in their final positions.','Do not force the cover. If it will not seat, a wire is in the way.','Pushing the plug in presses the jack into the stops at its terminal end. Pulling the plug out pulls it against the foot wall, so the strap never takes the force.']},
     {title:'Hang it on the wall',text:'Stick on the 4 rubber bumpers, set 2 wall screws 201 mm apart, and hang the sign on its keyholes. Plug in the power cord at the foot.',
      add:[],wires:['*'],dir:FRONT,dist:1.0},
   ];

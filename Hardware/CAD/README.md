@@ -10,7 +10,7 @@ Double-click `block_p_viewer.html` to open it in a browser (needs internet for t
 
 Drag the STL files into Bambu Studio. They're already laid flat, and every filename starts with its filament color. The full list is in `print/PRINT_LIST.md`.
 
-- `print/black`: 13 files, for black filament
+- `print/black`: 14 files, for black filament
 - `print/white`: 2 files, for translucent white filament
 - `print/test_pieces`: print these 3 first to check the diffuser fit, glow and screw hole size
 

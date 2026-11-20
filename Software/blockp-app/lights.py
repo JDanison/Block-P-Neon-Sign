@@ -4,8 +4,14 @@
 The outline and LED count come from Hardware/CAD/block_p.py (outline O, in mm, y up)."""
 import asyncio, colorsys, math, random, time
 
-N = 68
+N = 204                 # 5 mm FCOB strip, 160 LEDs/m, 12 sections (Hardware/CAD/block_p.py prints the count)
 FPS = 30
+# Power limit. The FCOB strip is rated 12 W per meter at full white: 12 / 5 V / 160 LEDs = 15 mA per
+# LED, 5 mA per color. That puts all 204 LEDs at full white near 3.1 A. Frames are scaled so the
+# estimate never passes this budget, under the LED branch's 5 A fuse. Check MA_PER_CHANNEL once with a
+# meter at full white: if the real draw is higher, raise it so the limit stays honest.
+LED_BUDGET_A = 4.0
+MA_PER_CHANNEL = 5.0
 OUTLINE = [(0, 0), (120.33, 0), (120.33, 63), (91.67, 63), (91.67, 163.8), (322.67, 163.8),
            (322.67, 382.8), (0, 382.8), (0, 319.8), (28.67, 319.8), (28.67, 63), (0, 63)]
 SIZE = (322.67, 382.8)
@@ -57,6 +63,7 @@ class Lights:
         self.seed = [random.random() for _ in range(N)]
         self.sparks = [0.0] * N
         self.level = 0.0                      # fades the whole strip on/off smoothly
+        self.amps = 0.0                       # estimated strip current for the last frame, after limiting
 
     def _open_strip(self):
         try:
@@ -114,7 +121,11 @@ class Lights:
         self.level += (target - self.level) * 0.15
         k = self.level * max(0, min(100, st.get("brightness", 70))) / 100
         base = rgb_override or [(r, g, b)] * N
-        return [[int(c * p * k) for c in col] for col, p in zip(base, px)]
+        frame = [[c * p * k for c in col] for col, p in zip(base, px)]
+        amps = sum(sum(px_) for px_ in frame) / 255 * MA_PER_CHANNEL / 1000
+        scale = min(1.0, LED_BUDGET_A / amps) if amps > 0 else 1.0
+        self.amps = amps * scale
+        return [[int(c * scale) for c in col] for col in frame]
 
     async def run(self, sleeping):
         t0 = time.monotonic()

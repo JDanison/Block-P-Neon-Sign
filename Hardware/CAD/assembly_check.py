@@ -39,7 +39,6 @@ def main():
         ("Right speaker, from the back", parts["Speaker right"], BACK, 60),
         ("Screen, from the back", b.union([parts["Screen"], parts["Screen board"], parts["Screen ports"]]), BACK, 70),
         ("Screen clips, from the back", b.union([b.screen_clip(x, y) for x in b.CLAMP_XS for y in (b.CLAMP_TOP_Y, b.CLAMP_BOTTOM_Y)]), BACK, 60),
-        ("Power jack, from below", parts["Power jack"], (0, -1, 0), 30),
     ]
     print("Part paths")
     for name, part, axis, travel in steps:
@@ -51,6 +50,10 @@ def main():
     tray = b.union([upper, *brackets, parts["Pi case bottom"], parts["Pi case top"], parts["Pi connectors"], parts["Cable plugs"],
                     parts["Converter"], parts["USB audio dongle"], parts["Level shifter board"], parts["Level shifter parts"]])
     print(f"  Upper cover with electronics, closing: {hits(tray, installed, BACK, 60) or 'clear'}")
+    # The DC jack rides on the lower cover in its pocket, under its strap, and its opening lines up
+    # with the hole in the bottom of the foot as the cover closes.
+    lower_tray = b.union([lower, parts["Power jack"], b.jack_strap()])
+    print(f"  Lower cover with the DC jack, closing: {hits(lower_tray, installed, BACK, 60) or 'clear'}")
 
     print("\nCables crossing between the shell and the cover")
     for r in b.wire_routes():

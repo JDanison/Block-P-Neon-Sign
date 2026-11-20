@@ -1,4 +1,5 @@
-<!doctype html><meta charset=utf-8><meta name=viewport content='width=device-width,initial-scale=1'><title>Block P Sign Renders</title>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Block P Sign Renders</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;800&family=Source+Sans+3:wght@400;600&family=JetBrains+Mono:wght@400;600&display=swap">
@@ -61,13 +62,15 @@ code{font-family:var(--mono);font-size:.88em}
 .facts dt{font:600 12px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
 .facts dd{margin:2px 0 0;font-size:17px}
 .note{color:var(--muted);font-size:15px}
+tr.sec th{padding-top:20px;font-size:13px;color:var(--gold)}
+.tag{display:inline-block;font:600 11px var(--mono);letter-spacing:.05em;text-transform:uppercase;color:#17140f;background:var(--bright);padding:1px 6px;vertical-align:2px}
 a{color:var(--bright)}
 </style>
 
 <div class="wrap">
   <header class="stack">
     <h1>Block P sign</h1>
-    <p>All three sizes use your locked shape at true scale. Drag to rotate, scroll or pinch to zoom.</p>
+    <p>The 8" build at true scale, with its parts list and wiring. Drag to rotate, scroll or pinch to zoom.</p>
   </header>
 
   <section class="stack">
@@ -80,102 +83,200 @@ a{color:var(--bright)}
       <div class="group"><span>Room</span><button id="room-dim" aria-pressed="true">Dim</button><button id="room-lit" aria-pressed="false">Lit</button></div>
       <div class="group"><span>Print</span><button id="fin-black" aria-pressed="true">Black</button><button id="fin-white" aria-pressed="false">White</button></div>
     </div>
-    <p class="note" id="prompt">Select 5", 7" or 8" to see that option's details, wiring and parts.</p>
   </section>
 
-  <div class="stack gap" id="detail" hidden>
+  <div class="stack gap" id="detail">
     <section class="stack">
-      <h2 id="dName"></h2>
-      <p id="dText"></p>
-      <dl class="facts" id="dFacts"></dl>
+      <h2>8" build</h2>
+      <p>Your locked shape with the Waveshare 8" screen you've already tested. Your speakers sit under the screen, and the foot stays clean.</p>
+      <dl class="facts">
+        <div><dt>Sign size</dt><dd>15.1 × 12.7 × 2.2 in</dd></div>
+        <div><dt>Picture size</dt><dd>6.8 × 4.3 in</dd></div>
+        <div><dt>Screen</dt><dd>Waveshare 8DP-CAPLCD, bought and tested</dd></div>
+        <div><dt>Resolution</dt><dd>1280 × 800</dd></div>
+        <div><dt>Speakers</dt><dd>Yours, under the screen</dd></div>
+        <div><dt>LED outline</dt><dd>About 1.3 m of strip, 204 LEDs in 12 sections</dd></div>
+        <div><dt>Power</dt><dd>One 12V cord into the foot</dd></div>
+        <div><dt>Printing</dt><dd>Bambu H2C, with the upper sections on the left nozzle</dd></div>
+      </dl>
     </section>
 
     <section class="stack">
-      <h2>Parts to buy</h2>
+      <h2>Parts list</h2>
+      <p>Checked against the Block P CAD. Every part below appears in the model or its build steps. Rows marked <span class="tag">New</span> changed in this version.</p>
       <div class="tablewrap"><table>
-        <thead><tr><th>Part</th><th>Spec</th><th>Notes</th></tr></thead>
-        <tbody id="dParts"></tbody>
+        <thead><tr><th>Part</th><th>Spec</th><th class="n">Uses</th><th>Why it's needed</th></tr></thead>
+        <tbody>
+          <tr class="sec"><th colspan="4">To buy</th></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0BPSQ84TT">Meiyue 12V 5A adapter</a></td><td>60W, 5.5 × 2.1 mm plug</td><td class="n">1</td><td>The only cord into the sign. Use its included screw-terminal DC jack inside the foot.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B07D268SDY">KNACRO 12V to 5V converter</a></td><td>10A, 50W</td><td class="n">1</td><td>Turns 12V into a steady 5V right beside the parts that use it.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0F31YX6XX">USB-C power pigtails, 5 pack</a></td><td>22 AWG, 5V 3A</td><td class="n">2</td><td>One powers the Pi and one powers the screen, both straight from the 5V junction.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0FL7GKGVM">FCOB WS2812B strip, 6.56 ft</a> <span class="tag">New</span></td><td>5V, 160 LEDs/m, 5 mm wide</td><td class="n">≈1.3 m</td><td>Cheaper per LED than standard 60/m strips, and dense enough to read as one line. The CAD channel is now sized for it: 204 LEDs, with sections ending on cut marks.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B08FHD994N">SN74AHCT125N, 5 pack</a></td><td>3.3V to 5V logic</td><td class="n">1</td><td>Raises the Pi's 3.3V data signal to the 5V the strip expects. The rest are spares.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0CBPRBRTT">PATIKIL perfboard, 24 pack</a></td><td>1.2 × 1.2 in</td><td class="n">1</td><td>Holds the level shifter circuit shown below.</td></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=FPC+flat+HDMI+ribbon+kit+straight+micro+HDMI+20cm">Flat HDMI ribbon kit</a> <span class="tag">New</span></td><td>Straight micro-HDMI plug, straight HDMI plug, 20 cm ribbon</td><td class="n">1</td><td>The CAD has straight plugs at both ends, so this replaces the 90° cable. The slack lets you plug it in with the cover open.</td></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=USB+A+to+USB+C+left+right+angle+90+degree+1ft+data+cable">Touch cable</a> <span class="tag">New</span></td><td>Straight USB-A to 90° side-angle USB-C, about 1 ft, carries data</td><td class="n">1</td><td>Carries touch input from the screen to the Pi. Only the screen end turns, and its bend lies flat along the screen's board. This replaces the double right-angle 2 pack.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B07X5Y81C6">Geekworm N300 heatsink case</a></td><td>16 mm thick</td><td class="n">1</td><td>Cools the Pi with no fan inside the closed sign. The CAD brackets are shaped around it.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0D7PZS1VV">eSUN Lithophane White PLA+, 1 kg</a></td><td>Translucent white</td><td class="n">2 prints</td><td>The two diffusers that blend the LEDs into one glowing outline.</td></tr>
+          <tr class="sec"><th colspan="4">Small hardware</th></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=M3+x+10mm+self+tapping+screws">M3 × 10 mm self-tapping screws</a></td><td>The only screw size in the sign</td><td class="n">46</td><td>Covers, clips, brackets, speakers, the stem splice and the DC jack strap.</td></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=rubber+bumper+feet+8mm+tall+adhesive">Stick-on rubber bumpers</a></td><td>About 8 mm tall</td><td class="n">4</td><td>Hold the back off the wall so the vents can breathe.</td></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=28+AWG+stranded+silicone+wire">26 and 28 AWG stranded wire</a></td><td>Short lengths</td><td class="n">11 corners</td><td>26 AWG for 10 corner jumpers, because the strip's power passes through them, and 28 AWG for the tight corner under the top-left notch.</td></tr>
+          <tr><td><a href="https://www.amazon.com/s?k=0.1uF+ceramic+capacitor+through+hole">0.1 µF ceramic capacitor</a> <span class="tag">New</span></td><td>Through-hole</td><td class="n">1</td><td>Steadies the level shifter's power. Skip buying if you have one.</td></tr>
+          <tr><td>Zip ties</td><td>3.6 mm wide or narrower</td><td class="n">10</td><td>For the wire clips on the back cover.</td></tr>
+          <tr><td>Wall screws</td><td>Heads under 9 mm, shafts under 5 mm</td><td class="n">2</td><td>For the keyholes, 201 mm apart.</td></tr>
+          <tr><td>CA glue and thin foam tape</td><td></td><td class="n"></td><td>Glue for the diffusers, tape under the USB dongle strap.</td></tr>
+          <tr class="sec"><th colspan="4">Optional</th></tr>
+          <tr><td>5A inline fuse</td><td>Blade or glass</td><td class="n">1</td><td>Protects the LED wires if something shorts.</td></tr>
+          <tr><td><a href="https://www.amazon.com/dp/B0DP6MNQQB">Panel-mount barrel jack</a></td><td>5.5 × 2.1 mm</td><td class="n">1</td><td>Only if you want a flush socket in the foot instead of the adapter's screw-terminal jack. The CAD is built for the screw-terminal jack, so the foot hole would need changing.</td></tr>
+        </tbody>
       </table></div>
-      <p class="note" id="dOwn"></p>
+      <p class="note">Already yours: the screen, Pi 4B, USB audio board with its short cable, speakers, 18, 20 and 24 AWG wire, heat shrink, multimeter, black filament, the 330Ω resistor, the 1000 µF capacitor, a microSD card and soldering gear. Removed from the list: the 6 pack of barrel jacks, the 90° HDMI cable, the right-angle USB 2 pack and the 6 ft extension cord.</p>
     </section>
 
     <section class="stack">
-      <h2>Power wiring</h2>
-      <p>One cord comes in at 12V, and the converter inside the sign makes a steady 5V. The Pi and the LEDs each take their own branch, so the LEDs never draw through the Pi.</p>
+      <h2>Power and signal wiring</h2>
+      <p>One cord brings 12V into the foot. The converter makes 5V, and the 5V junction feeds five things on their own wires: the Pi, the screen, the level shifter board and both ends of the LED strip. The LEDs never draw power through the Pi.</p>
       <div class="diagram">
-      <svg viewBox="0 0 1000 560" role="img" aria-label="Wiring diagram. A 12 volt adapter feeds a panel jack and buck converter inside the sign. The 5 volt output goes to a soldered junction, which feeds the Pi through USB-C and both ends of the LED strip through an optional fuse. The Pi powers the screen and audio board by USB. Pi GPIO 18 drives the LED data line through a level shifter and resistor.">
+      <svg viewBox="0 0 1000 540" role="img" aria-label="Wiring diagram. A 12 volt adapter feeds the DC jack in the foot and then the buck converter. The converter's 5 volt output goes to a soldered junction. From there, USB-C pigtails power the screen and the Pi, a lead powers the level shifter board, and a fused branch powers both ends of the LED strip. The Pi sends GPIO 18 and ground to the level shifter board, which sends 5 volt data to the strip's data input. The Pi connects to the screen by HDMI and touch USB, and to the audio board by USB.">
         <defs>
           <marker id="r" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#f0645a"/></marker>
           <marker id="a" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#f2a33a"/></marker>
           <marker id="g" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#6fd08c"/></marker>
           <marker id="w" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#a8a29a"/></marker>
         </defs>
-        <rect x="130" y="14" width="858" height="532" fill="none" stroke="#cfb991" stroke-dasharray="7 6"/>
-        <text x="146" y="38" class="t" style="fill:#cfb991">Inside the sign</text>
-
-        <rect class="box" x="10" y="120" width="104" height="70"/><text x="20" y="146" class="t">12V 5A</text><text x="20" y="166" class="s">wall adapter</text>
-        <rect class="box" x="160" y="120" width="86" height="70"/><text x="170" y="146" class="t">Barrel</text><text x="170" y="166" class="s">panel jack</text>
-                <rect class="box" x="404" y="110" width="130" height="90"/><text x="416" y="140" class="t">Buck converter</text><text x="416" y="160" class="s">12V in, 5V out</text><text x="416" y="178" class="s">10A rated</text>
-        <rect class="box" x="590" y="120" width="104" height="70"/><text x="602" y="146" class="t">5V junction</text><text x="602" y="166" class="s">soldered</text>
-
-        <path d="M114 155H158" stroke="#f2a33a" stroke-width="3" marker-end="url(#a)" fill="none"/>
-                <path d="M246 155H402" stroke="#f2a33a" stroke-width="3" marker-end="url(#a)" fill="none"/>
-        <path d="M534 155H588" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
-
-        <rect class="box" x="760" y="52" width="86" height="60" stroke-dasharray="5 4"/><text x="772" y="78" class="t">Fuse</text><text x="772" y="96" class="s">5A, optional</text>
-        <path d="M694 140H726V82H758" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
-        <text x="640" y="78" class="s">LED branch, 5V</text>
-
-        <rect class="box" x="880" y="52" width="96" height="200"/>
-        <text x="892" y="78" class="t">LED strip</text><text x="892" y="98" class="s">START end</text><text x="892" y="116" class="s">1000 µF cap</text><text x="892" y="134" class="s">across 5V, GND</text><text x="892" y="232" class="s">DIN (data in)</text>
-        <path d="M846 82H878" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
-
-        <rect class="box" x="880" y="284" width="96" height="56"/><text x="892" y="308" class="t">LED strip</text><text x="892" y="326" class="s">FAR end</text>
-        <path d="M862 82V34H982V312H978" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
-        <text x="744" y="38" class="s">5V feeds both ends</text>
-
-        <rect class="box" x="360" y="280" width="190" height="130"/>
-        <text x="374" y="306" class="t">Raspberry Pi 4B</text><text x="374" y="326" class="s">USB-C power in</text><text x="374" y="346" class="s">GPIO 18 (pin 12), data out</text><text x="374" y="366" class="s">GND (pin 6)</text><text x="374" y="390" class="s">micro-HDMI, 2 USB ports</text>
-        <path d="M620 190V236H455V278" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
-        <text x="466" y="228" class="s">USB-C pigtail, 5V</text>
-        <g id="screenLead"><path d="M600 190V212H340V478H302" stroke="#f0645a" stroke-width="2.5" stroke-dasharray="7 5" marker-end="url(#r)" fill="none"/>
-        <text x="150" y="208" class="s">USB-C pigtail for the screen, 5V</text></g>
-
-        <rect class="box" x="640" y="322" width="150" height="88"/><text x="652" y="348" class="t">Level shifter</text><text x="652" y="368" class="s">74AHCT125, 5V powered</text><text x="652" y="388" class="s">3.3V data to 5V data</text>
-        <rect class="box" x="810" y="228" width="50" height="44"/><text x="818" y="250" class="t">330Ω</text>
-        <path d="M550 346H638" stroke="#6fd08c" stroke-width="3" marker-end="url(#g)" fill="none"/>
-        <path d="M790 346H802V250H808" stroke="#6fd08c" stroke-width="3" marker-end="url(#g)" fill="none"/>
-        <path d="M860 250H878" stroke="#6fd08c" stroke-width="3" marker-end="url(#g)" fill="none"/>
-        <text x="570" y="336" class="s">data</text>
-        <path d="M550 372H600V396H638" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-        <text x="556" y="414" class="s">shared ground</text>
-
-        <rect class="box" x="150" y="440" width="150" height="76"/><text x="162" y="468" class="t">Screen</text><text x="162" y="488" class="s">HDMI and USB from Pi</text>
-        <rect class="box" x="360" y="440" width="190" height="76"/><text x="374" y="468" class="t">USB audio board</text><text x="374" y="488" class="s">USB from Pi</text>
-        <rect class="box" x="610" y="440" width="150" height="76"/><text x="622" y="468" class="t">Two speakers</text><text x="622" y="488" class="s">left and right</text>
-        <path d="M400 410V426H225V438" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-        <path d="M455 410V438" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-        <path d="M550 478H608" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-
-        <g transform="translate(150,60)">
+        <rect x="140" y="12" width="852" height="516" fill="none" stroke="#cfb991" stroke-dasharray="7 6"/>
+        <text x="156" y="36" class="t" style="fill:#cfb991">Inside the sign</text>
+        <g transform="translate(156,52)">
           <path d="M0 8H30" stroke="#f2a33a" stroke-width="3"/><text x="38" y="13" class="s">12V</text>
           <path d="M84 8H114" stroke="#f0645a" stroke-width="3"/><text x="122" y="13" class="s">5V</text>
           <path d="M162 8H192" stroke="#6fd08c" stroke-width="3"/><text x="200" y="13" class="s">LED data</text>
-          <path d="M272 8H302" stroke="#a8a29a" stroke-width="2"/><text x="310" y="13" class="s">signal, USB</text>
+          <path d="M272 8H302" stroke="#a8a29a" stroke-width="2"/><text x="310" y="13" class="s">signal, USB, ground</text>
         </g>
-        <text x="150" y="98" class="s">Every 12V and 5V line also has a matching</text><text x="150" y="114" class="s">ground wire. Those are left out for clarity.</text>
+        <text x="156" y="94" class="s">Every 12V and 5V line also has a matching ground wire.</text>
+        <text x="156" y="110" class="s">Those are left out for clarity.</text>
+
+        <rect class="box" x="10" y="130" width="110" height="70"/><text x="22" y="158" class="t">12V 5A</text><text x="22" y="178" class="s">wall adapter</text>
+        <rect class="box" x="160" y="130" width="120" height="70"/><text x="172" y="156" class="t">DC jack</text><text x="172" y="174" class="s">screw terminal,</text><text x="172" y="190" class="s">in the foot</text>
+        <rect class="box" x="320" y="120" width="150" height="90"/><text x="332" y="148" class="t">Buck converter</text><text x="332" y="168" class="s">12V in, 5V out</text><text x="332" y="186" class="s">10A rated</text>
+        <rect class="box" x="530" y="130" width="120" height="70"/><text x="542" y="158" class="t">5V junction</text><text x="542" y="178" class="s">soldered</text>
+        <path d="M120 165H158" stroke="#f2a33a" stroke-width="3" marker-end="url(#a)" fill="none"/>
+        <path d="M280 165H318" stroke="#f2a33a" stroke-width="3" marker-end="url(#a)" fill="none"/>
+        <path d="M470 165H528" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+
+        <rect class="box" x="700" y="60" width="100" height="56" stroke-dasharray="5 4"/><text x="712" y="84" class="t">Fuse</text><text x="712" y="102" class="s">5A, optional</text>
+        <path d="M650 150H675V88H698" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <text x="682" y="134" class="s">LED power</text>
+        <path d="M800 88H848" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <path d="M830 88V28H984V228H972" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <circle cx="830" cy="88" r="4" fill="#f0645a"/>
+        <text x="846" y="22" class="s">5V feeds both ends</text>
+
+        <rect class="box" x="850" y="40" width="120" height="132"/>
+        <text x="862" y="64" class="t">LED strip</text><text x="862" y="84" class="s">START end</text><text x="862" y="104" class="s">1000 µF cap</text><text x="862" y="122" class="s">across 5V, GND</text><text x="862" y="162" class="s">DIN (data in)</text>
+        <rect class="box" x="850" y="200" width="120" height="56"/><text x="862" y="224" class="t">LED strip</text><text x="862" y="244" class="s">FAR end</text>
+
+        <rect class="box" x="150" y="300" width="150" height="90"/><text x="162" y="326" class="t">8" screen</text><text x="162" y="346" class="s">USB-C power</text><text x="162" y="366" class="s">HDMI, touch USB</text>
+        <path d="M555 200V230H225V298" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <text x="300" y="224" class="s">USB-C pigtail</text>
+
+        <rect class="box" x="330" y="300" width="200" height="120"/>
+        <text x="342" y="326" class="t">Raspberry Pi 4B</text><text x="342" y="346" class="s">USB-C power in</text><text x="342" y="366" class="s">GPIO 18 (pin 12), data</text><text x="342" y="386" class="s">GND (pin 6)</text><text x="342" y="406" class="s">micro-HDMI 0, USB</text>
+        <path d="M590 200V252H430V298" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <text x="440" y="246" class="s">USB-C pigtail</text>
+        <path d="M330 330H302" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+        <path d="M330 360H302" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+
+        <rect class="box" x="620" y="300" width="220" height="110" style="stroke:#6fd08c"/>
+        <text x="632" y="326" class="t">Level shifter board</text><text x="632" y="346" class="s">74AHCT125 and 330Ω</text><text x="632" y="366" class="s">on perfboard, 5V powered</text><text x="632" y="390" class="s">Detail below</text>
+        <path d="M635 200V298" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
+        <path d="M530 345H618" stroke="#6fd08c" stroke-width="3" marker-end="url(#g)" fill="none"/>
+        <text x="540" y="338" class="s">GPIO 18</text>
+        <path d="M530 390H618" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+        <text x="540" y="383" class="s">ground</text>
+        <path d="M800 300V158H848" stroke="#6fd08c" stroke-width="3" marker-end="url(#g)" fill="none"/>
+        <text x="806" y="282" class="s">data</text>
+
+        <rect class="box" x="330" y="460" width="200" height="56"/><text x="342" y="484" class="t">USB audio board</text><text x="342" y="504" class="s">USB from Pi</text>
+        <rect class="box" x="580" y="460" width="150" height="56"/><text x="592" y="484" class="t">Two speakers</text><text x="592" y="504" class="s">left and right</text>
+        <path d="M430 420V458" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+        <path d="M530 488H578" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
       </svg>
-    </div>
+      </div>
+
+      <h3>Level shifter board</h3>
+      <p>The Pi's GPIO pins put out 3.3V, but the strip wants at least about 3.5V to read a 1 reliably. One gate of the 74AHCT125 takes the 3.3V signal in and sends the same pattern out at 5V. The 330Ω resistor on its output damps ringing on the data wire. The chip has four gates. The three unused ones are switched off and their inputs grounded, so they can't pick up noise.</p>
+      <div class="diagram">
+      <svg viewBox="0 0 1000 460" role="img" aria-label="Level shifter board schematic. The 74AHCT125 chip has pin 14 on 5 volts and pin 7 on ground. Pin 1 is grounded to enable the first gate. Pin 2 takes Pi GPIO 18. Pin 3 goes through a 330 ohm resistor to the strip's data input. Pins 4, 10 and 13 go to 5 volts. Pins 5, 9 and 12 go to ground. Pins 6, 8 and 11 are not connected. A 0.1 microfarad capacitor sits across pins 14 and 7.">
+        <defs>
+          <marker id="r2" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#f0645a"/></marker>
+          <marker id="g2" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#6fd08c"/></marker>
+          <marker id="w2" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#a8a29a"/></marker>
+        </defs>
+        <text x="20" y="24" class="s">Every GND label joins the board's ground. Every 5V label joins the board's 5V lead.</text>
+
+        <rect x="410" y="40" width="180" height="350" fill="#26231f" stroke="#cfb991" stroke-width="1.5"/>
+        <path d="M486 40A14 14 0 0 0 514 40" fill="none" stroke="#cfb991" stroke-width="1.5"/>
+        <text x="500" y="74" class="t" text-anchor="middle" style="fill:#cfb991">74AHCT125</text>
+
+        <g class="pins">
+          <text x="422" y="95" class="s">1 · 1OE</text><text x="422" y="140" class="s">2 · 1A</text><text x="422" y="185" class="s">3 · 1Y</text><text x="422" y="230" class="s">4 · 2OE</text><text x="422" y="275" class="s">5 · 2A</text><text x="422" y="320" class="s">6 · 2Y</text><text x="422" y="365" class="s">7 · GND</text>
+          <text x="578" y="95" class="s" text-anchor="end">VCC · 14</text><text x="578" y="140" class="s" text-anchor="end">4OE · 13</text><text x="578" y="185" class="s" text-anchor="end">4A · 12</text><text x="578" y="230" class="s" text-anchor="end">4Y · 11</text><text x="578" y="275" class="s" text-anchor="end">3OE · 10</text><text x="578" y="320" class="s" text-anchor="end">3A · 9</text><text x="578" y="365" class="s" text-anchor="end">3Y · 8</text>
+        </g>
+
+        <path d="M410 90H340" stroke="#a8a29a" stroke-width="2"/><text x="332" y="95" class="t" text-anchor="end" style="fill:#a8a29a">GND</text>
+        <rect class="box" x="20" y="115" width="210" height="40"/><text x="32" y="133" class="t">From Pi GPIO 18</text><text x="32" y="149" class="s">header pin 12</text>
+        <path d="M230 135H408" stroke="#6fd08c" stroke-width="3" marker-end="url(#g2)" fill="none"/>
+        <rect class="box" x="20" y="160" width="210" height="40"/><text x="32" y="178" class="t">To strip DIN</text><text x="32" y="194" class="s">20 AWG data wire</text>
+        <path d="M410 180H322" stroke="#6fd08c" stroke-width="3" fill="none"/>
+        <rect x="250" y="172" width="70" height="16" fill="#26231f" stroke="#6fd08c" stroke-width="2"/>
+        <text x="285" y="166" class="s" text-anchor="middle">330Ω</text>
+        <path d="M250 180H232" stroke="#6fd08c" stroke-width="3" marker-end="url(#g2)" fill="none"/>
+        <path d="M410 225H340" stroke="#f0645a" stroke-width="2"/><text x="332" y="230" class="t" text-anchor="end" style="fill:#f0645a">5V</text>
+        <path d="M410 270H340" stroke="#a8a29a" stroke-width="2"/><text x="332" y="275" class="t" text-anchor="end" style="fill:#a8a29a">GND</text>
+        <path d="M410 315H384" stroke="#a8a29a" stroke-width="1" stroke-dasharray="3 3"/><text x="376" y="320" class="s" text-anchor="end">not connected</text>
+        <path d="M410 360H340" stroke="#a8a29a" stroke-width="2"/><text x="332" y="365" class="t" text-anchor="end" style="fill:#a8a29a">GND</text>
+
+        <rect class="box" x="810" y="68" width="170" height="44"/><text x="822" y="87" class="t">5V junction</text><text x="822" y="104" class="s">5V lead, 22 AWG</text>
+        <path d="M808 90H592" stroke="#f0645a" stroke-width="3" marker-end="url(#r2)" fill="none"/>
+        <path d="M590 135H660" stroke="#f0645a" stroke-width="2"/><text x="668" y="140" class="t" style="fill:#f0645a">5V</text>
+        <path d="M590 180H660" stroke="#a8a29a" stroke-width="2"/><text x="668" y="185" class="t" style="fill:#a8a29a">GND</text>
+        <path d="M590 225H616" stroke="#a8a29a" stroke-width="1" stroke-dasharray="3 3"/><text x="624" y="230" class="s">not connected</text>
+        <path d="M590 270H660" stroke="#f0645a" stroke-width="2"/><text x="668" y="275" class="t" style="fill:#f0645a">5V</text>
+        <path d="M590 315H660" stroke="#a8a29a" stroke-width="2"/><text x="668" y="320" class="t" style="fill:#a8a29a">GND</text>
+        <path d="M590 360H616" stroke="#a8a29a" stroke-width="1" stroke-dasharray="3 3"/><text x="624" y="365" class="s">not connected</text>
+
+        <rect class="box" x="790" y="250" width="190" height="72"/><text x="802" y="274" class="t">0.1 µF capacitor</text><text x="802" y="294" class="s">across pins 14 and 7,</text><text x="802" y="312" class="s">as close to the chip as fits</text>
+
+        <rect class="box" x="20" y="404" width="210" height="44"/><text x="32" y="423" class="t">Pi ground</text><text x="32" y="440" class="s">header pin 6</text>
+        <path d="M230 426H300" stroke="#a8a29a" stroke-width="2" marker-end="url(#w2)" fill="none"/><text x="308" y="431" class="t" style="fill:#a8a29a">GND</text>
+        <rect class="box" x="790" y="404" width="190" height="44"/><text x="802" y="423" class="t">Junction ground</text><text x="802" y="440" class="s">ground lead, 22 AWG</text>
+        <path d="M788 426H718" stroke="#a8a29a" stroke-width="2" marker-end="url(#w2)" fill="none"/><text x="710" y="431" class="t" text-anchor="end" style="fill:#a8a29a">GND</text>
+      </svg>
+      </div>
+      <div class="tablewrap"><table>
+        <thead><tr><th>Wire to the board</th><th>From</th><th>To on the chip</th></tr></thead>
+        <tbody>
+          <tr><td>5V</td><td>5V junction</td><td>Pin 14, and the ties on pins 4, 10 and 13</td></tr>
+          <tr><td>Ground</td><td>5V junction ground</td><td>Pin 7, and the ties on pins 1, 5, 9 and 12</td></tr>
+          <tr><td>Data in</td><td>Pi GPIO 18, header pin 12</td><td>Pin 2</td></tr>
+          <tr><td>Data reference</td><td>Pi ground, header pin 6</td><td>Board ground</td></tr>
+          <tr><td>Data out</td><td>Pin 3, then the 330Ω resistor</td><td>Strip DIN at the START end</td></tr>
+        </tbody>
+      </table></div>
+      <p class="note">Pin 1 is the first gate's enable, and it switches the gate on when it's grounded. GPIO 18 drives the strip using the Pi's PWM hardware, which is also what runs its 3.5 mm audio jack. That's why sound goes through the USB audio board. The CAD routes the board's 5V and ground lead from the junction, up over the converter, to the board.</p>
+
       <div class="two">
         <div class="stack">
           <h3>Bring-up order</h3>
           <ol>
-            <li>Check that the adapter is center positive, then connect the jack and converter.</li>
+            <li>Check that the adapter is center positive, then wire its DC jack to the converter input.</li>
             <li>Measure the converter output with nothing else connected. Expect about 5.0 to 5.25V.</li>
             <li>Solder the 5V junction and the Pi's USB-C lead, then boot the Pi.</li>
-            <li id="dStepScreen"></li>
+            <li>Add the screen's USB-C lead, then its HDMI ribbon and touch cable.</li>
             <li>Play a video and run <code>vcgencmd get_throttled</code>. A result of <code>0x0</code> means no low-voltage events.</li>
-            <li>Add the strip's power at both ends and the capacitor, then the level shifter, resistor and data line.</li>
+            <li>Build the level shifter board. Power it from the junction and measure 5V between pins 14 and 7 before connecting the Pi.</li>
+            <li>Add the strip's power at both ends and the 1000 µF capacitor, then the data wire. Test at low brightness first.</li>
             <li>Run everything together for a few hours before it goes in the enclosure.</li>
           </ol>
         </div>
@@ -183,12 +284,30 @@ a{color:var(--bright)}
           <h3>Estimated power, gold LEDs</h3>
           <div class="tablewrap"><table>
             <thead><tr><th>Load</th><th class="n">Amps at 5V</th><th>Basis</th></tr></thead>
-            <tbody id="dPower"></tbody>
-            <tfoot id="dPowerFoot"></tfoot>
+            <tbody>
+              <tr><td>Raspberry Pi 4B</td><td class="n">2.0</td><td>Planning allowance</td></tr>
+              <tr><td>Screen</td><td class="n">0.8</td><td>Maker's rating</td></tr>
+              <tr><td>Audio at peak</td><td class="n">0.5</td><td>Estimate for your speakers</td></tr>
+              <tr><td>LEDs, gold</td><td class="n">2.0</td><td>About 1.3 m at full gold, capped in software</td></tr>
+            </tbody>
+            <tfoot><tr><td>Total</td><td class="n">5.3</td><td>About 2.5A at 12V</td></tr></tfoot>
           </table></div>
-          <p class="note">Audio assumes the board's 2.6W into 4Ω rating drops by about half with your 8Ω speakers. The LED figure uses the strip seller's 5V 3A per meter at gold brightness.</p>
+          <p class="note">The strip is rated 12W per meter at full white. Gold runs about two thirds of that, roughly 1.9A for 1.3 m. The 12V adapter carries about half the current a 5V adapter would, so its cord loses far less voltage.</p>
         </div>
       </div>
+    </section>
+
+    <section class="stack">
+      <h2>Changes carried into the CAD</h2>
+      <p>Done on November 19, 2026, in <code>Hardware/CAD/block_p.py</code>. The print files, STEP files and the <a href="https://claude.ai/artifact/BhFKYkZ5V4AmjUNsZYKAa3">Block P CAD</a> viewer are rebuilt, and every check passes: no collisions, no wire clashes, every bend at or above its minimum, and a clear assembly order.</p>
+      <ul>
+        <li><strong>LED channel:</strong> sized for the 5 mm, 160 LEDs/m strip. It's 9 mm deep, down from 13. That gives 204 LEDs in 12 sections, each ending on a cut mark, with 4 mm of bare wall at each corner for the jumper pads. Cut marks are assumed at every LED (6.25 mm) until you measure yours.</li>
+        <li><strong>DC jack:</strong> the panel-jack hole is now an 11 mm hole for the cord's plug, in the bottom of the foot. The screw-terminal jack sits in a pocket on the lower cover under a new printed <code>jack_strap</code>, with 2 more M3 × 10 mm screws (46 total). The jack's 30 × 14 × 11.5 mm body size is an estimate.</li>
+        <li><strong>Level shifter power:</strong> a 22 AWG 5V and ground lead runs from the junction, up over the converter, to the board.</li>
+        <li><strong>Touch cable:</strong> straight USB-A at the Pi and side-angle USB-C at the screen. The route is 254 mm, within 1 ft.</li>
+        <li><strong>HDMI ribbon:</strong> unchanged, with straight plugs at both ends.</li>
+        <li><strong>Assembly list:</strong> the speaker step now says M3 × 10 mm.</li>
+      </ul>
     </section>
   </div>
 
@@ -213,38 +332,9 @@ const SHAPE = [[0,0],[9,0],[9,4],[6.5,4],[6.5,13],[25.5,13],[25.5,31],[0,31],[0,
 const OPENING = [[6,16],[22,16],[22,28],[6,28]];
 const az = a => `https://www.amazon.com/dp/${a}`;
 const SPK_LEN = 92, SPK_W = 36;   // your speakers, from the listing
-const OPTIONS = [
-  {id:'r1', label:'5"', name:'5" screen', u:7.4, spk:12.5, pic:[108,64.8], board:[121,95], leads:1, strip:'1.1 m',
-   text:'Your locked design with the screen you already own. Your speakers do not fit this size, so it needs smaller ones in the foot.',
-   model:'MPI5001 (you own it)', res:'800 × 480', weight:'248 g', price:'$0', print:'One piece on a 256 mm bed',
-   speakers:'About 25 mm in the foot. Yours do not fit.', power:{screen:[0.3,"Maker's rating"],led:1.2,total:4.0,adapter:1.9}},
-  {id:'s7', label:'7"', name:'7" screen', u:10.45, pic:[150.7,94.2], leads:2, strip:'1.4 m',
-   text:'Twice the picture area of the 5". Your speakers fit under the screen, but only just.',
-   model:'Waveshare 7EP-CAPLCD', asin:'B0DKT8VJH4', res:'1280 × 800', weight:'453 g', price:'$78.99 at Waveshare; check Amazon', print:'About 2 sections on a 256 mm bed',
-   speakers:'Yours, under the screen. About 199 mm of room for 184 mm of speakers.', power:{screen:[0.6,"Maker's rating"],led:1.7,total:4.8,adapter:2.2}},
-  {id:'s8', label:'8"', name:'8" screen (your choice)', u:11.9, pic:[172.2,107.6], leads:2, strip:'1.6 m',
-   text:'2.6 times the picture area of the 5". Your speakers fit under the screen with room to spare, and the foot stays clean.',
-   model:'Waveshare 8DP-CAPLCD', asin:'B0BPMCTQQ8', res:'1280 × 800', weight:'406 g', price:'$73.99 at Waveshare; check Amazon', print:'About 2 sections on a 256 mm bed',
-   speakers:'Yours, under the screen. About 226 mm of room for 184 mm of speakers.', power:{screen:[0.8,"Maker's rating"],led:2.0,total:5.3,adapter:2.5}},
-];
-for (const o of OPTIONS){ o.outer=SHAPE; o.hole=OPENING; o.depth=50; o.ledW=4; o.W=25.5*o.u; o.H=31*o.u; o.fw=9*o.u; o.fh=4*o.u; }
+const OPTIONS = [{id:'s8', label:'8"', u:11.9, pic:[172.2,107.6]}];
+for (const o of OPTIONS){ o.outer=SHAPE; o.hole=OPENING; o.depth=55; o.ledW=4; o.W=25.5*o.u; o.H=31*o.u; o.fw=9*o.u; o.fh=4*o.u; }
 const MAX_H=Math.max(...OPTIONS.map(o=>o.H));
-
-const parts = o => [
-  o.asin && {n:o.model+' screen', a:o.asin, s:o.res+' HDMI', t:'Includes HDMI, USB and spacers'},
-  {n:'Meiyue 12V 5A adapter', a:'B0BPSQ84TT', s:'60W, 5.5 × 2.1 mm plug', t:'Your pick'},
-  {n:'Barrel jacks, 6 sets', a:'B0DP6MNQQB', s:'5.5 × 2.1 mm, panel mount', t:'Uses 1'},
-  {n:'KNACRO 12V to 5V converter', a:'B07D268SDY', s:'10A, 50W', t:'Size the mount from the real part'},
-  {n:'USB-C power leads, 5 pack', a:'B0F31YX6XX', s:'22 AWG, 5V 3A', t:`Uses ${o.leads}. Cut to about 30 cm`},
-  {n:'FCOB WS2812B strip, 6.56 ft', a:'B0FL7GKGVM', s:'5V, 160 LEDs/m, 5 mm wide', t:`Uses about ${o.strip}`},
-  {n:'SN74AHCT125N, 5 pack', a:'B08FHD994N', s:'3.3V to 5V level shifter', t:'Skip if you have one'},
-  {n:'Flat HDMI to micro-HDMI cable', a:'B01367WEI4', s:'0.2 m, 90 degree up', t:'Buy after CAD confirms the direction'},
-  o.asin && {n:'Right angle USB-A to C cables, 2 pack', a:'B0DG8J6S1G', s:'6 in, supports data', t:'For touch'},
-  {n:'Geekworm N300 heatsink case', a:'B07X5Y81C6', s:'16 mm thick', t:'Cools the Pi with no fan'},
-  {n:'PATIKIL perfboard, 24 pack', a:'B0CBPRBRTT', s:'1.2 × 1.2 in', t:'Holds the level shifter'},
-  {n:'eSUN Lithophane White PLA+, 1 kg', a:'B0D7PZS1VV', s:'Translucent white', t:'LED diffuser. Test with your strip first'},
-  !o.asin && {n:'25 mm speakers, 2', s:'4 or 8Ω', t:'Not selected yet, because yours do not fit'},
-].filter(Boolean);
 const GAP = 190, BASE_Y = 1300;
 let cursor = 0;
 for (const o of OPTIONS){ o.x = cursor; o.y = BASE_Y; cursor += o.W + GAP; }
@@ -252,41 +342,12 @@ const TOTAL = cursor - GAP;
 
 function outer(o){ return o.outer.map(([x,y])=>[x*o.u,y*o.u]); }
 function hole(o){ return o.hole.map(([x,y])=>[x*o.u,y*o.u]); }
-function perimeter(o){ const p=outer(o); return p.reduce((n,a,i)=>{const b=p[(i+1)%p.length];return n+Math.hypot(a[0]-b[0],a[1]-b[1])},0); }
-const inch = mm => Math.round(mm/25.4);
 
 const views = document.getElementById('views');
 const addView=(text,id)=>{const b=document.createElement('button'); b.textContent=text; b.dataset.view=id; views.append(b);};
-addView('All three','all');
-OPTIONS.forEach(o=>addView(o.label,o.id));
+addView('Sign','all');
 addView('With person','person');
-
-function showDetail(){
-  const o=OPTIONS.find(x=>x.id===current.view);
-  document.getElementById('detail').hidden=!o;
-  document.getElementById('prompt').hidden=!!o;
-  if(!o) return;
-  document.getElementById('dName').textContent=o.name;
-  document.getElementById('dText').textContent=o.text;
-  const facts=[['Sign size',`${(o.H/25.4).toFixed(1)} × ${(o.W/25.4).toFixed(1)} in`],['Picture size',`${(o.pic[0]/25.4).toFixed(1)} × ${(o.pic[1]/25.4).toFixed(1)} in`],['Screen',o.model],['Resolution',o.res],['Screen weight',o.weight],['Screen price',o.price],['Speakers',o.speakers],['LED outline',`${(perimeter(o)/1000).toFixed(1)} m, buy for about ${o.strip}`],['Printing',o.print]];
-  const dl=document.getElementById('dFacts'); dl.replaceChildren();
-  for(const [k,v] of facts){const d=document.createElement('div'),t=document.createElement('dt'),e=document.createElement('dd');t.textContent=k;e.textContent=v;d.append(t,e);dl.append(d);}
-  const tb=document.getElementById('dParts'); tb.replaceChildren();
-  for(const r of parts(o)){
-    const tr=document.createElement('tr'),a=document.createElement('td'),b=document.createElement('td'),c=document.createElement('td');
-    if(r.a){const l=document.createElement('a');l.href=az(r.a);l.textContent=r.n;a.append(l);}else a.textContent=r.n;
-    b.textContent=r.s;c.textContent=r.t;tr.append(a,b,c);tb.append(tr);
-  }
-  document.getElementById('dOwn').textContent=`Optional: a 5A fuse on the LED branch and a 6 ft extension cord. Already yours: Pi 4B, audio board${o.asin?', speakers':''}, wire, heat shrink, multimeter, black filament, resistor, capacitor and soldering gear.`;
-  document.getElementById('dStepScreen').textContent=o.leads>1?'Add the screen\'s USB-C power lead, then connect its HDMI and USB touch cable to the Pi.':'Connect the screen\'s HDMI and USB cable to the Pi, plus the audio board.';
-  document.getElementById('screenLead').style.display=o.leads>1?'':'none';
-  const pw=[['Raspberry Pi 4B',2.0,'Planning allowance'],['Screen',o.power.screen[0],o.power.screen[1]],['Audio at peak',0.5,'Estimate for 8Ω speakers'],['LEDs, gold',o.power.led,'Estimate, capped in software']];
-  const pb=document.getElementById('dPower'); pb.replaceChildren();
-  const row=(host,c)=>{const tr=document.createElement('tr');c.forEach((v,i)=>{const td=document.createElement('td');td.textContent=v;if(i===1)td.className='n';tr.append(td)});host.append(tr)};
-  pw.forEach(r=>row(pb,[r[0],r[1].toFixed(1),r[2]]));
-  const pf=document.getElementById('dPowerFoot'); pf.replaceChildren();
-  row(pf,['Total',o.power.total.toFixed(1),`About ${o.power.adapter.toFixed(1)}A at 12V`]);
-}
+function showDetail(){}
 
 let setView = () => {};
 const current = {view:'all', angle:'front'};
@@ -424,7 +485,7 @@ try {
     const m=new THREE.Mesh(new THREE.PlaneGeometry(size*640/120,size),new THREE.MeshBasicMaterial({map:t,transparent:true,toneMapped:false}));
     m.position.set(x,y,3); scene.add(m);
   }
-  for(const o of OPTIONS) label(`${o.label}  ·  ${(o.H/25.4).toFixed(1)} in tall`,o.x+o.W/2,o.y-62,74);
+  for(const o of OPTIONS) label('8" sign',o.x+o.W/2,o.y-62,74);
 
   // 5'10" reference figure, flat on the wall.
   const px=-430;
@@ -486,7 +547,7 @@ try {
   pair('room-dim','room-lit',v=>{ambient.intensity=v?.14:1.1;key.intensity=v?.35:1.6;bloom.strength=v?.5:.25;scene.background.set(v?0x0b0a09:0x1b1917)});
   pair('fin-black','fin-white',v=>body.color.set(v?0x1b1a1a:0xece8e0));
 
-  if(['#r1','#s7','#s8','#person'].some(h=>location.hash.startsWith(h))){current.view=location.hash.slice(1).replace('side','').replace('below','');if(location.hash.endsWith('side'))current.angle='side';if(location.hash.endsWith('below'))current.angle='below';syncButtons();}
+  if(['#person'].some(h=>location.hash.startsWith(h))){current.view='person';if(location.hash.endsWith('side'))current.angle='side';if(location.hash.endsWith('below'))current.angle='below';syncButtons();}
   document.getElementById('fail').remove();
   new ResizeObserver(resize).observe(host); resize();
   renderer.setAnimationLoop(()=>{
@@ -504,3 +565,5 @@ try {
   console.error(err);
 }
 </script>
+
+</body></html>

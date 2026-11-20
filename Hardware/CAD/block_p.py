@@ -48,17 +48,18 @@ SPLIT_COVER = 112.0       # covers split lower so they bridge the shell joint
 
 # LED edge
 LED_STEP = 10.0           # how far the LED channel sits in from the outline
-LED_DEPTH = 13.0           # how far the channel runs back from the front face
+LED_DEPTH = 9.0           # how far the channel runs back from the front face: 2.5 mm gap + 5 mm strip + 1.5 mm
 LED_FLOOR = 2.0           # material between the channel and the rear cavity
 DIFFUSER_WALL = 2.0
 TONGUE = 4.0              # diffuser overlap onto the shell, glued
 TONGUE_T = 1.2
 FIT = 0.15
-STRIP_W, STRIP_T = 10.0, 0.3      # ASSUMED standard WS2812B strip, confirm on yours
-LED_SIZE, LED_H = 5.0, 1.6
-LED_PITCH = 1000 / 60             # ASSUMED 60 LEDs per meter
-STRIP_END = 9.0                   # bare wall left at each corner for the jumpers
-STRIP_SEAM = 16.0                 # extra room at the two strip ends, so power wires can turn
+STRIP_W, STRIP_T = 5.0, 0.3       # FCOB WS2812B, 5 mm wide (BOM)
+LED_SIZE, LED_H = 2.0, 1.0        # 2020-size emitters under the COB phosphor
+LED_PITCH = 1000 / 160            # 160 LEDs per meter, 6.25 mm
+CUT_EVERY = 1                     # ASSUMED LEDs between cut marks. Measure your strip: sections end on cut marks
+STRIP_END = 4.0                   # bare wall left at each corner for the jumper pads and wire bend
+STRIP_SEAM = 21.0                 # extra room at the two strip ends, so power wires can S-bend from the holes to the pads
 
 # Waveshare 8DP-CAPLCD
 PANEL_W, PANEL_H = 194.0, 119.0
@@ -92,7 +93,10 @@ AUDIO_X, AUDIO_Y = 285.0, 238.0          # low end, at the speaker header
 AUDIO_W, AUDIO_L, AUDIO_T = 23.5, 47.0, 14.6   # body, plus a USB plug. Confirm on yours
 AUDIO_PLUG = 13.0
 PERF_X, PERF_Y, PERF_S = 150.0, 308.0, 30.5
-JACK_D = 12.0             # ASSUMED, listings say 11 to 12
+# DC jack: the 12V adapter's female 5.5 x 2.1 mm screw-terminal jack, held in a pocket on the
+# lower back cover by a screwed strap. The cord's plug goes in through the bottom of the foot.
+JACK_L, JACK_W, JACK_H = 30.0, 14.0, 11.5   # ASSUMED body size, measure yours
+JACK_PLUG_D = 11.0        # hole for the cord's plug overmold, ASSUMED
 
 
 def inset(points, d):
@@ -144,6 +148,11 @@ FOOT_W = BASE_BLACK_W + 2 * LED_STEP
 FOOT_H = BLACK_BAND + 2 * LED_STEP
 SERIF_Y = H_TOTAL - FOOT_H
 STEM_CX = (STEM_X0 + STEM_X1) / 2
+JACK_X = FOOT_W / 2
+JACK_Y0 = WALL + 0.2                       # jack face against the inside of the foot's bottom wall
+JACK_ZC = COVER + JACK_H / 2               # the jack sits flat on the cover
+JACK_STRAP_Y = JACK_Y0 + JACK_L * 0.45
+JACK_STRAP_XS = (JACK_X - JACK_W / 2 - 6, JACK_X + JACK_W / 2 + 6)
 O = [(0, 0), (FOOT_W, 0), (FOOT_W, FOOT_H), (STEM_X1, FOOT_H), (STEM_X1, BAND_Y), (W_TOTAL, BAND_Y), (W_TOTAL, H_TOTAL),
      (0, H_TOTAL), (0, SERIF_Y), (STEM_X0, SERIF_Y), (STEM_X0, FOOT_H), (0, FOOT_H)]
 
@@ -299,8 +308,8 @@ def front_shell():
 
     holes += vent_cuts()
 
-    # Power jack through the bottom of the foot
-    holes.append(Pos(FOOT_W / 2, 0, 21) * Rot(90, 0, 0) * Cylinder(JACK_D / 2, 14))
+    # The cord's plug enters through the bottom of the foot, into the jack held on the cover
+    holes.append(Pos(JACK_X, 0, JACK_ZC) * Rot(90, 0, 0) * Cylinder(JACK_PLUG_D / 2, 14))
 
     # LED wire holes at the strip's start and end
     holes.append(Pos(STEM_X1 - LED_STEP + 5, BAND_Y + LED_STEP, DEPTH - 2.5 - STRIP_W / 2) * Rot(90, 0, 0) * Cylinder(3, 8))
@@ -370,12 +379,22 @@ def back_covers():
     add.append(box(ax0, AUDIO_X + 5, ay1 + 0.2, ay1 + 2, COVER, COVER + 8))
     add.append(box(AUDIO_X + AUDIO_W - 5, ax1, ay1 + 0.2, ay1 + 2, COVER, COVER + 8))
     add += [cyl(x, AUDIO_STRAP_Y, BOSS_D, COVER, COVER + AUDIO_T + 0.3) for x in AUDIO_STRAP_XS]
+    # DC jack pocket: side rails, and corner stops at the terminal end that leave the middle open for
+    # the wires. Inserting the plug pushes the jack into those stops; pulling it out pulls the jack
+    # against the foot's bottom wall. The strap holds it down.
+    jx0, jx1, jy1 = JACK_X - JACK_W / 2 - 0.2, JACK_X + JACK_W / 2 + 0.2, JACK_Y0 + JACK_L + 0.2
+    add.append(box(jx0 - 2, jx0, JACK_Y0 + 2, jy1 + 2, COVER, COVER + 7))
+    add.append(box(jx1, jx1 + 2, JACK_Y0 + 2, jy1 + 2, COVER, COVER + 7))
+    add.append(box(jx0, jx0 + 3, jy1, jy1 + 2, COVER, COVER + 7))
+    add.append(box(jx1 - 3, jx1, jy1, jy1 + 2, COVER, COVER + 7))
+    add += [cyl(x, JACK_STRAP_Y, BOSS_D, COVER, COVER + JACK_H + 0.3) for x in JACK_STRAP_XS]
 
     add += [zip_anchor(x, y, along_x) for _, x, y, along_x in ZIP_CLIPS]
 
     cut += [cyl(x, y, PILOT_HOLE, PI_BRACKET_Z - PILOT_DEPTH, PI_BRACKET_Z + 1) for x, y in PI_POSTS]
     cut += [cyl(x, y, PILOT_HOLE, COVER + 8 - PILOT_DEPTH - 1, COVER + 9) for x, y in PERF_POSTS]
     cut += [cyl(x, AUDIO_STRAP_Y, PILOT_HOLE, COVER + AUDIO_T + 0.3 - PILOT_DEPTH, COVER + AUDIO_T + 1) for x in AUDIO_STRAP_XS]
+    cut += [cyl(x, JACK_STRAP_Y, PILOT_HOLE, COVER + JACK_H + 0.3 - PILOT_DEPTH, COVER + JACK_H + 1) for x in JACK_STRAP_XS]
     for x, y in SCREWS_UPPER + SCREWS_LOWER:
         cut.append(cyl(x, y, 3.4, -1, COVER + 1))
         cut.append(cyl(x, y, 7.6, -1, 1.8))
@@ -524,6 +543,15 @@ def audio_strap():
     return bar
 
 
+def jack_strap():
+    """Holds the DC jack in its pocket on the lower cover, like the USB dongle strap."""
+    z0 = COVER + JACK_H + 0.3
+    bar = box(JACK_STRAP_XS[0] - 6, JACK_STRAP_XS[1] + 6, JACK_STRAP_Y - 6, JACK_STRAP_Y + 6, z0, z0 + 3)
+    for x in JACK_STRAP_XS:
+        bar -= cyl(x, JACK_STRAP_Y, CLEAR_HOLE, z0 - 1, z0 + 4)
+    return bar
+
+
 def speaker(cx, cable_side):
     """Speaker from product photos: notched body, corner tabs and two 40 mm drivers."""
     n, hl, hw = 9.0, SPK_L / 2, SPK_W / 2
@@ -574,6 +602,7 @@ def screw_report():
         ("Stem splice", 4, 4.0, BOSS_D),
         ("Speaker rear tabs", 4, SPK_EAR_Y1 - SPK_EAR_Y0, SPEAKER_BOSS_D),
         ("USB dongle strap", 2, 3.0, BOSS_D),
+        ("DC jack strap", 2, 3.0, BOSS_D),
         ("Pi brackets", 4, PI_BRACKET_T, BOSS_D),
         ("Level shifter board", 4, 1.6, 8.5),
     ]
@@ -651,7 +680,9 @@ def screen_ribbon():
 
 
 def screen_plugs():
-    """HDMI head, power USB-C and a right-angle touch USB-C, all lying flat behind the panel."""
+    """HDMI head (straight), power USB-C (straight) and the side-angle touch USB-C, all lying flat
+    behind the panel. A side-angle plug turns the cable 90 degrees within the plug's flat plane, so it
+    leaves along the board instead of standing off it."""
     zc = SCREEN_BOARD_Z - 1.8
     parts = []
     x, y = screen_uv(108.5, 34.4)
@@ -663,9 +694,10 @@ def screen_plugs():
     body = box(x - 5.5, x + 5.5, y - 22, y - 4, zc - 3.6, zc + 1.7)
     parts.append(collar + fillet(body.edges().filter_by(Axis.Y), 2) + Pos(x, y - 26, zc) * Rot(90, 0, 0) * Cylinder(2.4, 8))
     x, y = screen_uv(53.3, 84.4)
-    collar = box(x - 4, x + 6, y - 3.6, y + 3.6, zc - 0.7, zc + 1.1)
-    body = box(x - 14, x - 4, y - 6, y + 10, zc - 3.6, zc + 1.7)
-    parts.append(collar + body + Pos(x - 9, y + 13, zc) * Rot(90, 0, 0) * Cylinder(1.7, 6))
+    collar = box(x - 4, x + 6, y - 3.6, y + 3.6, zc - 0.7, zc + 1.1)                # USB-C tongue shell, in the port
+    body = box(x - 15, x - 4, y - 6.5, y + 11, zc - 3.6, zc + 1.7)                  # side-angle housing, ASSUMED size
+    body = fillet(body.edges().filter_by(Axis.Z), 2)
+    parts.append(collar + body + Pos(x - 9.5, y + 14.5, zc) * Rot(90, 0, 0) * Cylinder(1.9, 7))   # strain relief
     return union(parts)
 
 
@@ -698,14 +730,18 @@ def speaker_plug():
 
 
 def power_jack():
-    """Threaded barrel jack, with the nut and solder tabs inside the foot."""
-    x, z = FOOT_W / 2, 21
-    body = Pos(x, 6, z) * Rot(90, 0, 0) * Cylinder(JACK_D / 2 - 0.2, 12)
-    nut = Pos(x, WALL + 1.5, z) * Rot(90, 0, 0) * Cylinder(8, 3)
-    back = Pos(x, 14, z) * Rot(90, 0, 0) * Cylinder(4.5, 6)
-    tab1 = box(x - 3.5, x - 2.5, 16, 22, z - 2, z + 2)
-    tab2 = box(x + 2.5, x + 3.5, 16, 22, z - 2, z + 2)
-    return body + nut + back + tab1 + tab2
+    """Female 5.5 x 2.1 mm DC jack with a 2-way screw terminal, lying in its pocket on the cover.
+    The jack opening faces down through the foot; the terminal screws face the back of the sign."""
+    x0, x1 = JACK_X - JACK_W / 2, JACK_X + JACK_W / 2
+    y0, y1 = JACK_Y0, JACK_Y0 + JACK_L
+    z0, z1 = COVER, COVER + JACK_H
+    body = box(x0, x1, y0, y1, z0, z1)
+    body = fillet(body.edges().filter_by(Axis.Y), 1.5)
+    body -= Pos(JACK_X, y0 + 5, JACK_ZC) * Rot(90, 0, 0) * Cylinder(4.1, 11)        # socket for the plug
+    for dx in (-3.5, 3.5):
+        body -= cyl(JACK_X + dx, y1 - 5, 3.2, z1 - 1.5, z1 + 1)                   # terminal screw heads
+        body -= Pos(JACK_X + dx, y1, JACK_ZC - 1) * Rot(90, 0, 0) * Cylinder(1.4, 6)  # wire entries
+    return body
 
 
 def level_shifter():
@@ -785,7 +821,9 @@ def run_layout(index, total, length):
     """Offset, LED count and span for one strip section."""
     before = STRIP_END + (STRIP_SEAM if index == 0 else 0)
     after = STRIP_END + (STRIP_SEAM if index == total - 1 else 0)
-    leds = max(1, int((length - before - after) // LED_PITCH))
+    # Sections can only be cut at the strip's cut marks, every CUT_EVERY LEDs
+    piece = LED_PITCH * CUT_EVERY
+    leds = max(1, int((length - before - after) // piece)) * CUT_EVERY
     span = leds * LED_PITCH
     return before + (length - before - after - span) / 2, leds, span
 
@@ -813,9 +851,12 @@ def led_jumpers():
         cx, cy = runs[i + 1][:2]
         lift = 1.0
         corner = (cx + (a[3][0] + b[3][0]) * lift, cy + (a[3][1] + b[3][1]) * lift, a[0][2])
+        # The 5 mm strip's pads sit closer together (1.6 mm). Power for the whole strip passes through
+        # these jumpers, so they are 26 AWG, except the tight corner under the top-left notch.
+        tight = i == 4
         routes.append(build_route(dict(
-            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=0.7 if i == 4 else 1.2, bend=2.2 if i == 4 else 3.5,
-            kind="28 AWG jumper" if i == 4 else "Jumper wire", pitch=3.2, lead=0.2,
+            name=f"LED corner {i + 1}", colors=["#d9342b", "#2fae5e", "#1b1b1b"], od=0.7 if tight else 1.0, bend=2.2 if tight else 3.0,
+            kind="28 AWG jumper" if tight else "26 AWG jumper", pitch=1.6, lead=0.2,
             start=(a[1], a[2], z_axis), end=(b[0], tuple(-c for c in b[2]), z_axis), via=[corner], check=False)))
     return routes
 
@@ -859,7 +900,7 @@ def wire_routes():
     """Every cable, with its terminals, waypoints and minimum bend radius in mm."""
     RED, BLK, GRN, ORG = "#d9342b", "#1b1b1b", "#2fae5e", "#f2a33a"
     jz = COVER + 7.75
-    led_z = DEPTH - 7.5
+    led_z = DEPTH - 2.5 - STRIP_W / 2
     pad_a, pad_b = led_pads()
     X, Y, Z = (1, 0, 0), (0, 1, 0), (0, 0, 1)
     NX, NY = (-1, 0, 0), (0, -1, 0)
@@ -880,8 +921,8 @@ def wire_routes():
     spk_y = SPK_Y0 + 11
     routes = [
         dict(name="12V in", colors=[ORG, BLK], od=2.4, bend=7.5, kind="18 AWG", pitch=2.5,
-             start=((FOOT_W / 2, 20, 21), Y, X), start_offsets=[-3, 3], end=((CONV_GLANDS[0], CONV_Y - 5, CONV_GLAND_Z), NY, X),
-             via=[(FOOT_W / 2, 48, 11), (FOOT_W / 2, 200, 11), (CONV_GLANDS[0], 225, CONV_GLAND_Z)]),
+             start=((JACK_X, JACK_Y0 + JACK_L, JACK_ZC - 1), Y, X), start_offsets=[-3.5, 3.5], end=((CONV_GLANDS[0], CONV_Y - 5, CONV_GLAND_Z), NY, X),
+             via=[(JACK_X, 58, 11), (JACK_X, 200, 11), (CONV_GLANDS[0], 225, CONV_GLAND_Z)]),
         dict(name="5V converter to junction", colors=[RED, BLK], od=2.4, bend=7.5, kind="18 AWG", pitch=2.5,
              start=((CONV_GLANDS[1], CONV_Y - 5, CONV_GLAND_Z), NY, X), end=((JUNCTION[0], 228, jz), NX, Y),
              via=[(CONV_GLANDS[1], 228, jz)], lead=2),
@@ -900,6 +941,11 @@ def wire_routes():
         dict(name="LED data", colors=[GRN], od=1.6, bend=5, kind="20 AWG", lead=2,
              start=((PERF_X + 4, PERF_Y + 8, COVER + 9.6), NX, Z), end=(pad_a, NX, Z),
              via=[(124, PERF_Y + 8, 30), (112, 250, 30), (100, 207, 24), (86, 199, 30), (hole_a[0], 192, led_z), hole_a, (hole_a[0], turn_y, led_z), (pad_a[0] - 10, turn_y, led_z)], end_lead=2.5),
+        # The SN74AHCT125 runs on 5V, from the junction. It climbs over the converter's right edge,
+        # because the Pi's mounting posts and brackets close the gap between the converter and the case.
+        dict(name="5V to level shifter", colors=[RED, BLK], od=1.4, bend=4, kind="22 AWG", lead=2, offsets=[-0.9, 0.9],
+             start=((116, JUNCTION[3], jz), Y, X), end=((PERF_X + 4, PERF_Y + 20, COVER + 9.6), NX, Z),
+             via=[(116, 237, 13), (106, 245, 27), (106, 258, 31), (106, PERF_Y + 20, 31)]),
         dict(name="Pi GPIO to shifter", colors=[GRN, BLK], od=1.4, bend=4, kind="24 AWG", lead=2, offsets=[1.0, -1.0], start_offsets=[3.8, -3.8],
              start=((PI_X + 17.8, PI_Y + 54, t + 9), Y, X), end=((PERF_X + 15, PERF_Y + 2, COVER + 9.6), NY, X),
              via=[(PI_X + 17.8, PI_Y + 64, t + 8), (PERF_X + 15, PI_Y + 58, COVER + 18)]),
@@ -907,8 +953,8 @@ def wire_routes():
              start=((usb_x, PI_Y + 9, t + 4), X, Z), end=((xc, socket_y, COVER + 7.3), Y, Z),
              via=[(leg, PI_Y + 9, t + 4), (leg, socket_y + 22, COVER + 7.3), (xc, socket_y + 22, COVER + 7.3)]),
         dict(name="Touch USB", colors=["#26262a"], od=4.0, bend=16, kind="USB cable", lead=1,
-             start=((usb_x, PI_Y + 9, t + 12), X, Z), end=((tch[0] - 9, tch[1] + 15.5, sz), Y, Z),
-             via=[(leg, PI_Y + 9, t + 12), (leg, 341, 33), (tch[0] - 9, 341, sz)]),
+             start=((usb_x, PI_Y + 9, t + 12), X, Z), end=((tch[0] - 9.5, tch[1] + 18, sz), Y, Z),
+             via=[(leg, PI_Y + 9, t + 12), (leg, 341, 33), (tch[0] - 9.5, 341, sz)]),
         dict(name="Speaker pair, right", colors=[RED, BLK], od=1.2, bend=4, kind="Speaker lead", offsets=[-0.7, 0.7], start_offsets=[-3, -1], lead=2,
              start=((xc, plug_y, COVER + 7.3), NY, X), end=((209 - 1, spk_y, SPK_ZC + 9), NX, Z),
              via=[(xc - 2, top, 11), (gap + 2, top, 11), (gap + 2, spk_y, SPK_ZC + 9)], end_lead=1),
@@ -983,7 +1029,7 @@ MOUNTED = {("Screen", "shell_upper"), ("Screen", "screen_clip_top_left"), ("Scre
            ("Speaker left", "shell_upper"), ("Speaker right", "shell_upper"),
            ("USB audio dongle", "cover_upper"), ("USB audio dongle", "audio_strap"), ("USB audio dongle", "USB cable socket"),
            ("USB audio dongle", "Speaker plug"), ("Level shifter board", "Level shifter parts"), ("Converter", "cover_upper"), ("Level shifter board", "cover_upper"),
-           ("Power jack", "shell_lower"), ("Pi case bottom", "cover_upper"), ("Pi brass spacers", "pi_bracket_left"),
+           ("Power jack", "cover_lower"), ("Power jack", "jack_strap"),("Pi case bottom", "cover_upper"), ("Pi brass spacers", "pi_bracket_left"),
            ("Pi brass spacers", "pi_bracket_low"), ("Pi brass spacers", "pi_bracket_high"), ("USB cable socket", "cover_upper")}
 
 
@@ -1048,6 +1094,7 @@ def main():
         "screen_clip_bottom_right": (screen_clip(CLAMP_XS[1], CLAMP_BOTTOM_Y), "print", "body", "back"),
         "stem_splice": (stem_splice(), "print", "body", "back"),
         "audio_strap": (audio_strap(), "print", "body", "back"),
+        "jack_strap": (jack_strap(), "print", "body", "back"),
         "pi_bracket_left": (brackets[0], "print", "body", "back"),
         "pi_bracket_low": (brackets[1], "print", "body", "back"),
         "pi_bracket_high": (brackets[2], "print", "body", "back"),

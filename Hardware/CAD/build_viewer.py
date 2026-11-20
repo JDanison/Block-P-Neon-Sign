@@ -18,7 +18,7 @@ import sys
 from PIL import Image
 
 CAD = pathlib.Path(__file__).parent
-PHOTO = CAD.parent.parent / "Software" / "Images" / "Background" / "OregonBlockP.JPG"
+PHOTO = CAD / "viewer_src" / "OregonBlockP.JPG"   # picture shown on the modeled screen
 
 
 def photo_uri():

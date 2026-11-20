@@ -1,6 +1,6 @@
 # Block P Sign: Progress
 
-Last updated: November 15, 2026
+Last updated: November 19, 2026
 
 ## Get back to everything
 
@@ -29,7 +29,7 @@ A wall-mounted, 3D-printed keepsake of four years in the Purdue All-American Mar
 | Print | Black body, translucent white LED diffuser |
 | Speakers | Your QCCAN 8 ohm 5W speakers (about 100 x 45 x 21 mm, holes 92 x 36 mm), mounted under the screen and firing down |
 | Printer | Bambu H2C, with the sign printed in two main sections |
-| LEDs | Your own 5V WS2812B strip, modeled as standard 10 mm 60 LED/m until confirmed. 68 LEDs in 12 sections with 11 soldered corner jumpers. Mostly solid gold or off |
+| LEDs | FCOB WS2812B, 5 mm wide, 160 LEDs/m: 204 LEDs in 12 sections with 11 soldered corner jumpers (26 AWG, 28 AWG at the tight corner). Mostly solid gold or off |
 | Power | 12V 5A adapter into a 10A 5V converter, with separate 5V branches for the Pi, screen and LEDs |
 | Fuses | No 12V fuse. A 5A fuse on the LED branch is optional and recommended |
 | Software | One Python service on the Pi that runs the LEDs, plays media with `mpv` and serves a React control page |
@@ -51,14 +51,14 @@ Proportions come from the band's formation, counted in people. One person is 14.
 | Design and renders | Done |
 | Parts list | Done, nothing ordered that I know of |
 | Pi | Set up November 15, 2026. It's named `blockp` (`blockp.local`), uses SSH keys only, and passed a power test. The old school project is backed up and removed. The address is in `Software/RPi IP Address.txt`, which is kept out of git |
-| LED code | Done in `Software/blockp-app/lights.py`, with 8 effects and your tested gold color. It shows a live preview until the strip is connected, then needs the `rpi_ws281x` driver installed |
+| LED code | Done in `Software/blockp-app/lights.py`, with 8 effects, your tested gold color, and 204 LEDs for the 5 mm FCOB strip. A current limiter caps the strip at 4 A, using the strip's 12 W/m rating. It shows a live preview until the strip is connected, then needs the `rpi_ws281x` driver installed |
 | Screen setup | Done November 15, 2026. The 8" screen and touch work, rotated 180 degrees for mounting. Brightness control over HDMI works. The screen needs its own USB-C power: powered from the Pi alone, it overloads the Pi's USB ports |
 | Kiosk | Done November 15, 2026. The Pi boots in about 20 seconds straight into the sign app, with no desktop. On the Pi, run `blockp` to see the commands |
 | Touch app | First version done November 15, 2026 (`Software/blockp-app`). Touching the screen drops down a frosted-glass control center with now playing, brightness, volume, lights, video and photo library, night mode, a phone QR code, and settings. Phones and PCs get the same controls at `blockp.local` |
 | Audio | Your speakers work with the USB audio board |
 | Control software | Done. The touch screen, plus phone, tablet and desktop layouts with Add to Home Screen. There's also library editing, a downloader update button, and backup and restore |
 | Video and photo player | Done. It plays videos and photo slideshows with slow pan and zoom, and shows an animated idle screen. The downloader saves YouTube links as 720p30, the format measured to play smoothly under the frosted menu |
-| Enclosure CAD | Current design done in build123d for the Bambu H2C. Automated checks cover collisions, the front face, wire bend radius, wire clashes and zip-tie clips. Assembly is planned as mount electronics to the back cover, connect, then fold closed, with detailed speaker, USB dongle, Pi and N300 case models. Some sizes are still estimates |
+| Enclosure CAD | Current design done in build123d for the Bambu H2C. Automated checks cover collisions, the front face, wire bend radius, wire clashes and zip-tie clips. Assembly is planned as mount electronics to the back cover, connect, then fold closed, with detailed speaker, USB dongle, Pi and N300 case models. Some sizes are still estimates. Updated November 19, 2026: a 9 mm channel for the 5 mm strip, a DC jack pocket and strap on the lower cover, the level shifter's 5V lead, and a side-angle touch cable. Every check passes |
 | Boot and reliability | Done November 15, 2026. Logs are kept in RAM, the hardware watchdog is on, automatic updates are off, saved files survive power cuts, and the Pi is renamed to `blockp` |
 
 ## Next steps

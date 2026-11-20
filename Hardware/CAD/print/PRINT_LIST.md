@@ -26,6 +26,7 @@ The model still uses estimated sizes for several parts, so print the test pieces
 | `BLACK_screen_clip_bottom_right.stl` | 1 | Screen clip | |
 | `BLACK_stem_splice.stl` | 1 | Joins the two shell sections | |
 | `BLACK_audio_strap.stl` | 1 | Holds the USB audio dongle | |
+| `BLACK_jack_strap.stl` | 1 | Holds the DC jack on the lower cover | |
 | `BLACK_pi_bracket_left.stl` | 1 | Pi case bracket | |
 | `BLACK_pi_bracket_low.stl` | 1 | Pi case bracket | |
 | `BLACK_pi_bracket_high.stl` | 1 | Pi case bracket | |
