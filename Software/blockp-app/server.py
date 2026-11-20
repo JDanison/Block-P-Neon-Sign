@@ -28,7 +28,7 @@ class Sign:
         self._dl_lock = None                     # one download at a time (restores can queue many)
         self.lib = {"videos": [], "albums": []}
         self.clients = set()
-        self.light_watchers = {}                 # websocket -> True if it's the sign's own screen
+        self.light_watchers = {}                 # websocket -> True if it gets the throttled preview rate
         self.display, self.audio = hw.Display(), hw.Audio()
         self.lights = L.Lights(lambda: self.settings["lights"], self.send_frame)
         self._save_handle = None
@@ -59,8 +59,10 @@ class Sign:
     async def toast(self, text):
         await self.send({"type": "toast", "text": text})
 
-    # Preview rates: phones and PCs get 30 fps for a smooth preview. The sign's own screen gets 15,
-    # because each redraw under the frosted menu costs video frames there (measured).
+    # Preview rates: phones and PCs get 30 fps for a smooth preview. The sign's own screen gets 15
+    # while a video plays, because each redraw under the frosted menu costs video frames there
+    # (measured); with no video showing it asks for "fast" and gets 30 like everyone else.
+    # light_watchers maps each websocket to True when it should get the throttled rate.
     PREVIEW_FPS = {False: 30, True: 15}
 
     async def send_frame(self, frame):
@@ -406,7 +408,7 @@ async def ws_handler(request):
             m = json.loads(msg.data)
             if m.get("type") == "watch_lights":
                 if m.get("on"):
-                    sign.light_watchers[ws] = bool(m.get("screen"))
+                    sign.light_watchers[ws] = bool(m.get("screen")) and not m.get("fast")
                 else:
                     sign.light_watchers.pop(ws, None)
             elif m.get("type") == "cmd":

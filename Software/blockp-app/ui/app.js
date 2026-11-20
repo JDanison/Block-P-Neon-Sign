@@ -28,10 +28,16 @@ function connect() {
 }
 const send = obj => { if (wsReady) ws.send(JSON.stringify(obj)); };
 const cmd = (type, extra = {}) => send({ type: 'cmd', cmd: { type, ...extra } });
-let watching = false;
+// The sign's screen asks for the full preview rate ("fast") whenever no video is showing: the
+// throttling only exists to protect video frames under the menu.
+let watching = false, watchFast = null;
 function syncLightWatch() {
   const want = isOpen() && (app.view === 'home' || app.view === 'lights');
-  if (want !== watching || !wsReady) { watching = want; send({ type: 'watch_lights', on: want, screen: SCREEN }); }
+  const fast = !SCREEN || !videoBusy();
+  if (want !== watching || (want && fast !== watchFast) || !wsReady) {
+    watching = want; watchFast = fast;
+    send({ type: 'watch_lights', on: want, screen: SCREEN, fast });
+  }
 }
 
 function onMessage(m) {
@@ -71,14 +77,23 @@ function stateChanged() {
 }
 
 // LED preview frame: r, g, b per LED. The server sends them as binary (612 bytes) at 30 fps to
-// phones and PCs and 15 fps to the sign's own screen.
+// phones, PCs and the sign's screen with no video showing, and 15 fps to the sign while video plays.
+// Frames are drawn on the next display refresh rather than the moment they arrive, so uneven
+// network spacing doesn't show as stutter, and a burst of frames costs only one draw.
+let framePending = false;
 function onFrame(f) {
   app.frame = f;
   ledTick++;
-  // The big preview on the Lights page draws every frame; the small one in the control centre on
-  // the sign draws less often, because each redraw inside the frosted sheet costs video frames.
-  const every = SCREEN ? window.BLOCKP_LED_EVERY ?? 4 : 1;   // sign: ~4 fps, under 1% dropped video frames, measured
-  $$('canvas.leds').forEach(c => { if (c.id === 'ltBig' || ledTick % every === 0) drawLights(c); });
+  if (framePending) return;
+  framePending = true;
+  requestAnimationFrame(() => {
+    framePending = false;
+    // The big preview on the Lights page draws every frame; while a video plays on the sign, the
+    // small one in the control centre draws less often, because each redraw inside the frosted
+    // sheet costs video frames there.
+    const every = SCREEN && videoBusy() ? window.BLOCKP_LED_EVERY ?? 4 : 1;   // ~4 fps: under 1% dropped video frames, measured
+    $$('canvas.leds').forEach(c => { if (c.id === 'ltBig' || ledTick % every === 0) drawLights(c); });
+  });
 }
 
 // ---------- helpers ----------
@@ -176,6 +191,13 @@ vid.addEventListener('playing', () => {
   vid.classList.add('show');
   idleVid.classList.remove('show'); idleImg.classList.remove('show'); idleVid.pause();
 });
+// A video (playlist or animated idle loop) is on screen and moving: the LED previews throttle
+// themselves to protect its frames. Re-ask the server for the right preview rate when that changes.
+function videoBusy() {
+  return [vid, idleVid].some(v => v.classList.contains('show') && !v.paused && !v.ended);
+}
+if (SCREEN) for (const v of [vid, idleVid]) for (const e of ['playing', 'pause', 'ended', 'emptied'])
+  v.addEventListener(e, () => syncLightWatch());
 vid.addEventListener('ended', () => cmd('ended', { index: app.state.player.index }));
 vid.addEventListener('error', () => {
   if (!vid.getAttribute('src')) return;
