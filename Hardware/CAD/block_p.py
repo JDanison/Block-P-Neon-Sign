@@ -90,7 +90,7 @@ SPACER_H = 5.0            # brass spacers from the kit, added above the top cove
 CONV_X, CONV_Y = 42.5, 245.0       # clears the shell's screw post at (34.7, 300) and the Pi's post at x 114
 # 12V to 5V 10A converter. The KNACRO went out of stock, so the corner stops now fit the common
 # potted 10A/50W body (up to 66 x 60 x 22 mm), and any of those modules drops in under the same zip ties.
-# Modeled unit: DROK 5V 10A 50W, 65 x 58 x 22 mm, from DROK's published size.
+# Modeled body: 65 x 58 x 22 mm (DROK). The listed pick, uxcell B01ENT1PPM, is 64 x 57 x 22 mm and fits the same pocket.
 CONV_L, CONV_W, CONV_T = 66.0, 60.0, 22.0   # pocket inside the corner stops
 CONV_BODY = (65.0, 58.0, 22.0)              # DROK body. Wire exits are ASSUMED, check the real part
 AUDIO_X, AUDIO_Y = 285.0, 238.0          # low end, at the speaker header
