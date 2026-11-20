@@ -60,7 +60,7 @@ code{font-family:var(--mono);font-size:.88em;overflow-wrap:anywhere}
   <section class="stack">
     <div class="modes" role="group" aria-label="Viewer mode">
       <button id="mode-explore" aria-pressed="true">Explore model</button>
-      <button id="mode-build" aria-pressed="false">Build guide: 12 steps</button>
+      <button id="mode-build" aria-pressed="false">Build guide: 11 steps</button>
     </div>
     <div class="viewer" id="viewer"><div id="fail">Loading the model…</div></div>
     <div class="steps" id="stepPanel" hidden>
@@ -511,6 +511,7 @@ try{
   const wanted=location.hash.slice(1).split('-');
   if(wanted[0]==='steps') step.i=(+wanted[1]||1)-1;
   const start=wanted[0]==='steps'||VIEWS.map(v=>v[0]).includes(wanted[0])?wanted[0]:'front';
+  document.getElementById('mode-build').textContent=`Build guide: ${STEPS.length} steps`;
   setView(start,true);
   renderer.setAnimationLoop(()=>{
     if(goal.on){camera.position.lerp(goal.pos,.09);controls.target.lerp(goal.tgt,.09);if(camera.position.distanceTo(goal.pos)<3)goal.on=false;dirty=true;}

@@ -4,6 +4,10 @@ Last updated: November 19, 2026
 
 ## Get back to everything
 
+- **Everything in one link:** https://claude.ai/artifact/7JiZs627D4oxsy8ad2iG6d
+  - Three tabs: **Render**, **CAD & BoM** (model, build guide, print list, files, parts list) and **Wiring & install** (wiring diagram, level shifter, bring-up order, cable routes, assembly notes). Add `#cad` or `#install` to the link to open a tab directly.
+  - Rebuild it after either page below changes: `python "Design Process/build_combined.py"` writes `Design Process/block-p-sign.html`, then republish that file.
+  - The two pages below are its sources and still work on their own.
 - **Renders, wiring and parts:** https://claude.ai/artifact/UUrsDX5AFSufHLUw4droVF
   - This page is private to your account and pinned in your claude.ai sidebar.
   - In Claude Code, run `/artifacts` to list it. On the web, go to claude.ai/code/artifacts.

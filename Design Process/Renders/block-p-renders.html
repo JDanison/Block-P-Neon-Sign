@@ -7,7 +7,7 @@
 /* Layout: night-game press box. One large viewer, then option cards, then the wiring sheet. Single dark look by choice. */
 :root{
   --bg:#121110; --panel:#1c1a18; --line:#3a352e; --fg:#f1ece2; --muted:#b4aa9b;
-  --gold:#cfb991; --bright:#ffc04a; --red:#f0645a; --amber:#f2a33a; --green:#6fd08c; --gray:#a8a29a;
+  --gold:#cfb991; --bright:#ffc04a; --red:#f0645a; --amber:#f2a33a; --green:#6fd08c; --blue:#5fa8f5; --gray:#a8a29a;
   --display:"Big Shoulders Display","Arial Narrow",Impact,sans-serif;
   --body:"Source Sans 3","Segoe UI",system-ui,sans-serif;
   --mono:"JetBrains Mono",Consolas,monospace;
@@ -143,6 +143,7 @@ a{color:var(--bright)}
           <marker id="r" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#f0645a"/></marker>
           <marker id="a" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#f2a33a"/></marker>
           <marker id="g" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#6fd08c"/></marker>
+          <marker id="b" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#5fa8f5"/></marker>
           <marker id="w" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="7" refY="4" orient="auto"><path d="M0 0L8 4L0 8Z" fill="#a8a29a"/></marker>
         </defs>
         <rect x="140" y="12" width="852" height="516" fill="none" stroke="#cfb991" stroke-dasharray="7 6"/>
@@ -151,7 +152,8 @@ a{color:var(--bright)}
           <path d="M0 8H30" stroke="#f2a33a" stroke-width="3"/><text x="38" y="13" class="s">12V</text>
           <path d="M84 8H114" stroke="#f0645a" stroke-width="3"/><text x="122" y="13" class="s">5V</text>
           <path d="M162 8H192" stroke="#6fd08c" stroke-width="3"/><text x="200" y="13" class="s">LED data</text>
-          <path d="M272 8H302" stroke="#a8a29a" stroke-width="2"/><text x="310" y="13" class="s">signal, USB, ground</text>
+          <path d="M272 8H302" stroke="#5fa8f5" stroke-width="2"/><text x="310" y="13" class="s">HDMI, USB, audio</text>
+          <path d="M422 8H452" stroke="#a8a29a" stroke-width="2"/><text x="460" y="13" class="s">ground</text>
         </g>
         <text x="156" y="94" class="s">Every 12V and 5V line also has a matching ground wire.</text>
         <text x="156" y="110" class="s">Those are left out for clarity.</text>
@@ -184,8 +186,8 @@ a{color:var(--bright)}
         <text x="342" y="326" class="t">Raspberry Pi 4B</text><text x="342" y="346" class="s">USB-C power in</text><text x="342" y="366" class="s">GPIO 18 (pin 12), data</text><text x="342" y="386" class="s">GND (pin 6)</text><text x="342" y="406" class="s">micro-HDMI 0, USB</text>
         <path d="M590 200V252H430V298" stroke="#f0645a" stroke-width="3" marker-end="url(#r)" fill="none"/>
         <text x="440" y="246" class="s">USB-C pigtail</text>
-        <path d="M330 330H302" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-        <path d="M330 360H302" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+        <path d="M330 330H302" stroke="#5fa8f5" stroke-width="2" marker-end="url(#b)" fill="none"/>
+        <path d="M330 360H302" stroke="#5fa8f5" stroke-width="2" marker-end="url(#b)" fill="none"/>
 
         <rect class="box" x="620" y="300" width="220" height="110" style="stroke:#6fd08c"/>
         <text x="632" y="326" class="t">Level shifter board</text><text x="632" y="346" class="s">74AHCT125 and 330Ω</text><text x="632" y="366" class="s">on perfboard, 5V powered</text><text x="632" y="390" class="s">Detail below</text>
@@ -199,8 +201,8 @@ a{color:var(--bright)}
 
         <rect class="box" x="330" y="460" width="200" height="56"/><text x="342" y="484" class="t">USB audio board</text><text x="342" y="504" class="s">USB from Pi</text>
         <rect class="box" x="580" y="460" width="150" height="56"/><text x="592" y="484" class="t">Two speakers</text><text x="592" y="504" class="s">left and right</text>
-        <path d="M430 420V458" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
-        <path d="M530 488H578" stroke="#a8a29a" stroke-width="2" marker-end="url(#w)" fill="none"/>
+        <path d="M430 420V458" stroke="#5fa8f5" stroke-width="2" marker-end="url(#b)" fill="none"/>
+        <path d="M530 488H578" stroke="#5fa8f5" stroke-width="2" marker-end="url(#b)" fill="none"/>
       </svg>
       </div>
 

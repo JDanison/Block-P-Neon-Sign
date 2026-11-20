@@ -36,6 +36,9 @@ python -m venv .venv
 .venv/Scripts/python -m pip install -r requirements.txt
 .venv/Scripts/python block_p.py
 .venv/Scripts/python build_viewer.py
+.venv/Scripts/python "../../Design Process/build_combined.py"
 ```
+
+The last line rebuilds `Design Process/block-p-sign.html`, the three-tab page that holds the renders, CAD, parts list and wiring in one link. Republish it after rebuilding.
 
 `block_p.py` reports each part's fit on the printer, collisions, the front face check, wire bend radii, zip-tie clips, wire clashes and the smallest gaps between parts.
