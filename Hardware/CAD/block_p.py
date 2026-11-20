@@ -87,8 +87,12 @@ CASE_FIN = 5.0
 CASE_PCB_Z = 7.0          # ASSUMED, case bottom to the underside of the board
 CASE_TOP_T = 2.6
 SPACER_H = 5.0            # brass spacers from the kit, added above the top cover
-CONV_X, CONV_Y = 38.0, 245.0
-CONV_L, CONV_W, CONV_T = 75.0, 41.0, 17.0   # ASSUMED, use the real converter
+CONV_X, CONV_Y = 42.5, 245.0       # clears the shell's screw post at (34.7, 300) and the Pi's post at x 114
+# 12V to 5V 10A converter. The KNACRO went out of stock, so the corner stops now fit the common
+# potted 10A/50W body (up to 66 x 60 x 22 mm), and any of those modules drops in under the same zip ties.
+# Modeled unit: DROK 5V 10A 50W, 65 x 58 x 22 mm, from DROK's published size.
+CONV_L, CONV_W, CONV_T = 66.0, 60.0, 22.0   # pocket inside the corner stops
+CONV_BODY = (65.0, 58.0, 22.0)              # DROK body. Wire exits are ASSUMED, check the real part
 AUDIO_X, AUDIO_Y = 285.0, 238.0          # low end, at the speaker header
 AUDIO_W, AUDIO_L, AUDIO_T = 23.5, 47.0, 14.6   # body, plus a USB plug. Confirm on yours
 AUDIO_PLUG = 13.0
@@ -409,8 +413,8 @@ def back_covers():
 
 
 JUNCTION = (110.0, 126.0, 221.0, 231.0)
-CONV_GLANDS = (CONV_X + 14, CONV_X + 60)
-CONV_GLAND_Z = COVER + 8.5
+CONV_GLANDS = (CONV_X + 16, CONV_X + 50)     # 12V in on the left, 5V out on the right, both facing the junction
+CONV_GLAND_Z = COVER + CONV_BODY[2] / 2
 
 
 def pi_brackets():
@@ -757,19 +761,17 @@ def level_shifter():
 
 
 def converter():
-    """Sealed converter: finned case, mounting ears and cable stubs."""
-    x0, x1, y0, y1 = CONV_X, CONV_X + CONV_L, CONV_Y, CONV_Y + CONV_W
-    z0, z1 = COVER, COVER + CONV_T
-    part = box(x0 + 6, x1 - 6, y0, y1, z0, z1)
-    part = fillet(part.edges().filter_by(Axis.X), 2)
-    for i in range(7):
-        y = y0 + 5 + i * 5.2
-        part -= box(x0 + 12, x1 - 12, y - 0.8, y + 0.8, z1 - 1.4, z1 + 1)
-    part += box(x0, x1, y0 + 3, y1 - 3, z0, z0 + 2.5)
+    """Potted 10A converter (DROK 65 x 58 x 22 mm), centered in its pocket, with cable stubs
+    toward the 5V junction. Held by the corner stops and two zip ties, so no mounting holes are used."""
+    bl, bw, bt = CONV_BODY
+    x0 = CONV_X + (CONV_L - bl) / 2
+    y0 = CONV_Y + (CONV_W - bw) / 2
+    z0, z1 = COVER, COVER + bt
+    part = box(x0, x0 + bl, y0, y0 + bw, z0, z1)
+    part = fillet(part.edges().filter_by(Axis.Z), 3)
+    part -= box(x0 + 6, x0 + bl - 6, y0 + 6, y0 + bw - 6, z1 - 1, z1 + 1)    # potting recess on top
     for x in CONV_GLANDS:
         part += Pos(x, y0 - 2.5, CONV_GLAND_Z) * Rot(90, 0, 0) * Cylinder(3, 5)
-    for x in (x0 + 3, x1 - 3):
-        part -= cyl(x, (y0 + y1) / 2, 3.4, z0 - 1, z0 + 4)
     return part
 
 
