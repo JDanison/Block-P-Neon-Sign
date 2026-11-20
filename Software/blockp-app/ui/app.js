@@ -23,14 +23,15 @@ function connect() {
   ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/api/ws`);
   ws.onopen = () => { wsReady = true; watching = false; syncLightWatch(); setConn(); };
   ws.onclose = () => { wsReady = false; setConn(); setTimeout(connect, 1500); };
-  ws.onmessage = e => onMessage(JSON.parse(e.data));
+  ws.binaryType = 'arraybuffer';
+  ws.onmessage = e => e.data instanceof ArrayBuffer ? onFrame(new Uint8Array(e.data)) : onMessage(JSON.parse(e.data));
 }
 const send = obj => { if (wsReady) ws.send(JSON.stringify(obj)); };
 const cmd = (type, extra = {}) => send({ type: 'cmd', cmd: { type, ...extra } });
 let watching = false;
 function syncLightWatch() {
   const want = isOpen() && (app.view === 'home' || app.view === 'lights');
-  if (want !== watching || !wsReady) { watching = want; send({ type: 'watch_lights', on: want }); }
+  if (want !== watching || !wsReady) { watching = want; send({ type: 'watch_lights', on: want, screen: SCREEN }); }
 }
 
 function onMessage(m) {
@@ -50,15 +51,21 @@ function onMessage(m) {
   } else if (m.type === 'seek') {
     if (SCREEN && vid.src) vid.currentTime = m.t;
   } else if (m.type === 'lights') {
-    app.frame = m.f;
-    ledTick++;
-    // The big preview on the Lights page draws every frame (15 fps); the small one in the control
-    // centre draws less often, because each redraw inside the frosted sheet costs video frames.
-    const every = window.BLOCKP_LED_EVERY ?? 4;     // ~4 fps: under 1% dropped video frames, measured
-    $$('canvas.leds').forEach(c => { if (c.id === 'ltBig' || ledTick % every === 0) drawLights(c); });
+    onFrame(m.f);
   } else if (m.type === 'toast') {
     toast(m.text);
   }
+}
+
+// LED preview frame: r, g, b per LED. The server sends them as binary (612 bytes) at 30 fps to
+// phones and PCs and 15 fps to the sign's own screen.
+function onFrame(f) {
+  app.frame = f;
+  ledTick++;
+  // The big preview on the Lights page draws every frame; the small one in the control centre on
+  // the sign draws less often, because each redraw inside the frosted sheet costs video frames.
+  const every = SCREEN ? window.BLOCKP_LED_EVERY ?? 4 : 1;   // sign: ~4 fps, under 1% dropped video frames, measured
+  $$('canvas.leds').forEach(c => { if (c.id === 'ltBig' || ledTick % every === 0) drawLights(c); });
 }
 
 // ---------- helpers ----------
@@ -609,16 +616,34 @@ function drawLights(c) {
     const R = f ? f[i * 3] : 40, G = f ? f[i * 3 + 1] : 30, B = f ? f[i * 3 + 2] : 10;
     const lum = Math.max(R, G, B), px = X(x), py = Y(y);
     if (!lum) { ctx.fillStyle = '#2a2a2e'; ctx.fillRect(px - r, py - r, 2 * r, 2 * r); return; }
-    const k = 255 / lum, rgb = `${R * k | 0},${G * k | 0},${B * k | 0}`, a = lum / 255;
-    const g = ctx.createRadialGradient(px, py, 0, px, py, gr);
-    g.addColorStop(0, `rgba(${rgb},${(0.9 * a).toFixed(2)})`);
-    g.addColorStop(0.35, `rgba(${rgb},${(0.35 * a).toFixed(2)})`);
-    g.addColorStop(1, `rgba(${rgb},0)`);
-    ctx.fillStyle = g;
-    ctx.fillRect(px - gr, py - gr, 2 * gr, 2 * gr);
-    ctx.fillStyle = `rgba(255,255,255,${(0.6 * a).toFixed(2)})`;
-    ctx.beginPath(); ctx.arc(px, py, r * 0.55, 0, Math.PI * 2); ctx.fill();
+    ctx.globalAlpha = lum / 255;
+    ctx.drawImage(glowSprite(R, G, B, lum, r, gr, dpr), px - gr, py - gr, 2 * gr, 2 * gr);
   });
+  ctx.globalAlpha = 1;
+}
+// Each LED's glow, drawn once per colour and size and then stamped, instead of building 204
+// gradients every frame. The colour is the LED's hue at full level (steps of 8, so a rainbow
+// needs a couple of hundred sprites at most); the level is applied with globalAlpha.
+const glows = new Map();
+function glowSprite(R, G, B, lum, r, gr, dpr) {
+  const k = 255 / lum, q = v => Math.min(255, Math.round(v * k / 8) * 8);
+  const rgb = `${q(R)},${q(G)},${q(B)}`, key = `${rgb}|${gr.toFixed(2)}|${dpr}`;
+  let s = glows.get(key);
+  if (s) return s;
+  if (glows.size > 600) glows.clear();
+  s = document.createElement('canvas');
+  s.width = s.height = Math.ceil(2 * gr * dpr);
+  const g = s.getContext('2d');
+  g.setTransform(s.width / (2 * gr), 0, 0, s.width / (2 * gr), 0, 0);
+  const grad = g.createRadialGradient(gr, gr, 0, gr, gr, gr);
+  grad.addColorStop(0, `rgba(${rgb},0.9)`);
+  grad.addColorStop(0.35, `rgba(${rgb},0.35)`);
+  grad.addColorStop(1, `rgba(${rgb},0)`);
+  g.fillStyle = grad; g.fillRect(0, 0, 2 * gr, 2 * gr);
+  g.fillStyle = 'rgba(255,255,255,0.6)';
+  g.beginPath(); g.arc(gr, gr, r * 0.55, 0, Math.PI * 2); g.fill();
+  glows.set(key, s);
+  return s;
 }
 
 // ----- settings -----
@@ -955,7 +980,7 @@ function bind() {
       case 'videos': app.libTab = 'videos'; return go('library');
       case 'photos': app.libTab = 'photos'; return go('library');
       case 'lights': return go('lights');
-      case 'lightsPower': e.stopPropagation(); return cmd('lights', { on: !s.lights.on });
+      case 'lightsPower': e.stopPropagation(); return cmd('lights', { on: !S().lights.on });   // live state: bind()'s copy goes stale
       case 'sleep': closeSheet(); return cmd('sleep', { on: true });
       case 'phone': app.addKind = 'qr'; return go('phone');
       case 'settings': return go('settings');

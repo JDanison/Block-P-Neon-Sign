@@ -27,11 +27,13 @@ class Sign:
         self.updater = {"status": "idle", "message": None}
         self._dl_lock = None                     # one download at a time (restores can queue many)
         self.lib = {"videos": [], "albums": []}
-        self.clients, self.light_watchers = set(), set()
+        self.clients = set()
+        self.light_watchers = {}                 # websocket -> True if it's the sign's own screen
         self.display, self.audio = hw.Display(), hw.Audio()
         self.lights = L.Lights(lambda: self.settings["lights"], self.send_frame)
         self._save_handle = None
-        self._frame_n = 0
+        self._preview_due = {True: 0.0, False: 0.0}
+        self._preview_task = None
 
     # ---------- sending ----------
     def public_state(self):
@@ -46,7 +48,7 @@ class Sign:
                 await ws.send_str(data)
             except Exception:
                 self.clients.discard(ws)
-                self.light_watchers.discard(ws)
+                self.light_watchers.pop(ws, None)
 
     async def push_state(self):
         await self.send({"type": "state", "state": self.public_state()})
@@ -57,10 +59,32 @@ class Sign:
     async def toast(self, text):
         await self.send({"type": "toast", "text": text})
 
+    # Preview rates: phones and PCs get 30 fps for a smooth preview. The sign's own screen gets 15,
+    # because each redraw under the frosted menu costs video frames there (measured).
+    PREVIEW_FPS = {False: 30, True: 15}
+
     async def send_frame(self, frame):
-        self._frame_n += 1
-        if self.light_watchers and self._frame_n % 2 == 0:             # 15 fps is plenty for a preview
-            await self.send({"type": "lights", "f": [c for px in frame for c in px]}, self.light_watchers)
+        """Called by the LED loop each frame. Sending runs in the background, so a phone on slow
+        Wi-Fi can never hold up the strip; if the last send hasn't finished, this frame is skipped."""
+        if self.light_watchers and (self._preview_task is None or self._preview_task.done()):
+            self._preview_task = asyncio.create_task(self._send_preview(frame))
+
+    async def _send_preview(self, frame):
+        now, data = time.monotonic(), None
+        for screen, fps in self.PREVIEW_FPS.items():
+            if now < self._preview_due[screen] - 0.01:   # 10 ms slack: a frame a hair early still counts
+                continue
+            to = [ws for ws, s in self.light_watchers.items() if s == screen]
+            if not to:
+                continue
+            self._preview_due[screen] = max(self._preview_due[screen] + 1 / fps, now - 0.5 / fps)
+            data = data or bytes(c for px in frame for c in px)   # binary: r, g, b per LED, 612 bytes
+            for ws in to:
+                try:
+                    await ws.send_bytes(data)
+                except Exception:
+                    self.clients.discard(ws)
+                    self.light_watchers.pop(ws, None)
 
     def save_soon(self):
         if self._save_handle:
@@ -381,7 +405,10 @@ async def ws_handler(request):
                 continue
             m = json.loads(msg.data)
             if m.get("type") == "watch_lights":
-                (sign.light_watchers.add if m.get("on") else sign.light_watchers.discard)(ws)
+                if m.get("on"):
+                    sign.light_watchers[ws] = bool(m.get("screen"))
+                else:
+                    sign.light_watchers.pop(ws, None)
             elif m.get("type") == "cmd":
                 try:
                     await sign.command(m.get("cmd", {}))
@@ -391,7 +418,7 @@ async def ws_handler(request):
                     await ws.send_str(json.dumps({"type": "toast", "text": "Something went wrong"}))
     finally:
         sign.clients.discard(ws)
-        sign.light_watchers.discard(ws)
+        sign.light_watchers.pop(ws, None)
     return ws
 
 
