@@ -42,7 +42,7 @@ function onMessage(m) {
     if (wasConnecting && app.state.wifi.status !== 'connecting') { loadSystem(); if (app.view === 'wifi') loadWifi(); }
     applyPlayback();
     document.body.classList.toggle('sleeping', !!app.state.sleeping);
-    if (first) render(); else update();
+    if (first) render(); else stateChanged();
   } else if (m.type === 'library') {
     app.lib = m.library;
     if ((app.view === 'library' || app.view === 'album') && !dragging) render(); else update();
@@ -55,6 +55,19 @@ function onMessage(m) {
   } else if (m.type === 'toast') {
     toast(m.text);
   }
+}
+
+// On the sign, pages that redraw in full on every change (Settings, Wi-Fi, an album) would redraw
+// about 11 times a second while someone drags a slider on a phone, costing video frames under the
+// menu. There they redraw at most every 300 ms, always ending on the latest state. Everywhere else,
+// changes apply at once (those views only patch values).
+let updateTimer = null, updateLast = 0;
+function stateChanged() {
+  const full = SCREEN && ['settings', 'wifi', 'album'].includes(app.view);
+  if (!full) return update();
+  const wait = updateLast + 300 - performance.now();
+  if (wait <= 0) { updateLast = performance.now(); return update(); }
+  if (!updateTimer) updateTimer = setTimeout(() => { updateTimer = null; updateLast = performance.now(); update(); }, wait);
 }
 
 // LED preview frame: r, g, b per LED. The server sends them as binary (612 bytes) at 30 fps to
