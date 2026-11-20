@@ -8,7 +8,7 @@ document.body.classList.add(SCREEN ? 'screen' : 'remote');
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const sheet = $('#sheet');
+const sheet = $('#sheet'), sheetIn = $('#sheetIn');   // the menu; its pages render into sheetIn
 
 const app = {
   state: null, lib: { videos: [], albums: [] }, sys: null, layout: null, frame: null,
@@ -63,13 +63,13 @@ function onMessage(m) {
   }
 }
 
-// On the sign, pages that redraw in full on every change (Settings, Wi-Fi, an album) would redraw
-// about 11 times a second while someone drags a slider on a phone, costing video frames under the
-// menu. There they redraw at most every 300 ms, always ending on the latest state. Everywhere else,
-// changes apply at once (those views only patch values).
+// On the sign, pages that redraw in full on every change (Wi-Fi, an album) would redraw about 11
+// times a second while someone drags a slider on a phone, costing video frames under the menu.
+// There they redraw at most every 300 ms, always ending on the latest state. Everywhere else,
+// changes apply at once (those views only patch values; Settings does too now).
 let updateTimer = null, updateLast = 0;
 function stateChanged() {
-  const full = SCREEN && ['settings', 'wifi', 'album'].includes(app.view);
+  const full = SCREEN && ['wifi', 'album'].includes(app.view);
   if (!full) return update();
   const wait = updateLast + 300 - performance.now();
   if (wait <= 0) { updateLast = performance.now(); return update(); }
@@ -81,7 +81,9 @@ function stateChanged() {
 // Frames are drawn on the next display refresh rather than the moment they arrive, so uneven
 // network spacing doesn't show as stutter, and a burst of frames costs only one draw.
 let framePending = false;
+const sameFrame = (a, b) => a && b && a.length === b.length && a.every((v, i) => v === b[i]);
 function onFrame(f) {
+  if (sameFrame(f, app.frame)) return;         // lights off or a solid colour: nothing to redraw
   app.frame = f;
   ledTick++;
   if (framePending) return;
@@ -103,6 +105,11 @@ function setSetting(path, value) {
   const patch = {};
   path.split('.').reduce((o, k, i, a) => (o[k] = i === a.length - 1 ? value : {}), patch);
   cmd('settings', { patch });
+  // Show it at once rather than after the server's round trip; its state push confirms it a moment
+  // later. This also lets quick repeat taps (a time stepper) build on each other.
+  const keys = path.split('.');
+  keys.slice(0, -1).reduce((o, k) => (o[k] ??= {}), S())[keys.at(-1)] = value;
+  stateChanged();
 }
 const fmt = s => {
   s = Math.max(0, Math.floor(s || 0));
@@ -281,28 +288,79 @@ setInterval(() => {
 // ---------- the drop-down menu ----------
 const isOpen = () => !SCREEN || document.body.classList.contains('open');
 let autoTimer;
+// Opening is split across the tap: on finger-down the menu is built and its frost snapshot drawn
+// while it's still hidden, so on finger-up the only work left is the slide itself. (Building it on
+// finger-up held the slide back ~25 ms and drew the snapshot during the first frames.)
+let prepared = null;
+function prepareSheet(view = 'home') {
+  if (!SCREEN || app.state?.sleeping || document.body.classList.contains('open')) return;
+  frost();
+  go(view);
+  freezeMini();
+  prepared = view;
+}
+// While the menu slides, the Lights tile shows a still picture of its preview instead of the live
+// canvas: a canvas inside the moving sheet cost a frame of the slide on the Pi, an image costs none.
+// The canvas comes back once the sheet has landed.
+function freezeMini() {
+  const c = $('#ltMini');
+  if (!c || !c.clientWidth) return;
+  const img = new Image();
+  img.className = 'ledsStill';
+  img.style.cssText = `width:${c.clientWidth}px;height:${c.clientHeight}px;flex:none`;
+  img.src = c.toDataURL();
+  c.after(img);
+  c.style.display = 'none';
+}
+function thawMini() {
+  $$('.ledsStill').forEach(i => i.remove());
+  const c = $('#ltMini');
+  if (c && c.style.display) { c.style.display = ''; drawLights(c); }
+}
 function openSheet(view = 'home') {
   if (app.state?.sleeping || document.body.classList.contains('open')) return;
-  go(view);                                   // build the page while it's still hidden...
-  requestAnimationFrame(() => {               // ...then slide it down, so nothing rebuilds mid-animation
-    document.body.classList.add('open');
-    syncLightWatch();
-    setTimeout(loadSystem, 400);              // refresh Wi-Fi/temperature after the slide finishes
-  });
+  if (prepared === view && app.view === view) {
+    bumpAuto();
+    slideOpen();                                // built and painted on finger-down: slide at once
+  } else {
+    frost();
+    go(view);                                   // build the page while it's still hidden...
+    requestAnimationFrame(slideOpen);           // ...then slide it down, so nothing rebuilds mid-animation
+  }
+  prepared = null;
 }
-// Frozen frost for full pages (see app.css): draw whatever is showing into a 160x100 canvas
+function slideOpen() {
+  document.body.classList.add('open');
+  clearInterval(frostTimer);
+  frostTimer = setInterval(frost, 4000);
+  // Live LED frames start once the slide has landed: redrawing the tile's preview mid-slide cost
+  // 2-3 of its 18 frames on the Pi. Until then the tile shows the last frame, drawn when it was built.
+  setTimeout(() => { thawMini(); syncLightWatch(); }, 340);
+  setTimeout(loadSystem, 400);                  // refresh Wi-Fi/temperature after the slide finishes
+}
+// Frozen frost (see app.css): what's showing, drawn into tiny 160x100 canvases with the blur and
+// tint baked into the pixels. #frost fills the screen behind full pages; #sheetFrost is the
+// drop-down's own glass and moves with it. Refreshed every 4 s while the menu is open.
+// The blur is baked in rather than a CSS filter because the Pi's compositor re-applies a CSS filter
+// every frame it draws: with a video playing, half the frames of a Settings scroll were slow and the
+// video dropped 21 frames; baked in, 3% and none (measured). 1.5 px here is 12 px on screen (8x).
+const FROST = { frost: 'blur(1.5px) saturate(130%) brightness(.8)', sheetFrost: 'blur(1.5px) saturate(170%) brightness(.58)' };
 let frostTimer;
 function frost() {
-  const c = $('#frost'), ctx = c.getContext('2d');
+  if (!SCREEN) return;
   const photo = photos.find(p => p.classList.contains('show'));
   const src = vid.classList.contains('show') ? vid : photo?._img ? photo._img
     : idleVid.classList.contains('show') ? idleVid : idleImg;
-  try { ctx.drawImage(src, 0, 0, c.width, c.height); } catch { /* nothing loaded yet */ }
+  for (const [id, filter] of Object.entries(FROST)) {
+    const c = $('#' + id), ctx = c.getContext('2d');
+    ctx.filter = filter;
+    // drawn 4 px past each edge, so the blur doesn't fade the edges to black
+    try { ctx.drawImage(src, -4, -4, c.width + 8, c.height + 8); } catch { /* nothing loaded yet */ }
+    ctx.filter = 'none';
+  }
 }
 function setFullPage(on) {
   if (!SCREEN) return;
-  clearInterval(frostTimer);
-  if (on) { frost(); frostTimer = setInterval(frost, 4000); }
   document.body.classList.toggle('fullpage', on);
 }
 
@@ -310,7 +368,9 @@ function closeSheet() {
   if (!SCREEN) return;
   setFullPage(false);
   document.body.classList.remove('open');
+  clearInterval(frostTimer);
   clearTimeout(autoTimer);
+  prepared = null;
   syncLightWatch();
 }
 function bumpAuto() {
@@ -328,6 +388,7 @@ function go(view) {
   syncLightWatch();
 }
 // Open on a tap (finger up). Opening on finger-down made the lift count as a tap on the close layer.
+$('#tapzone').addEventListener('pointerdown', () => prepareSheet('home'));
 $('#tapzone').addEventListener('click', () => openSheet('home'));
 $('#scrim').addEventListener('click', closeSheet);
 $('#sleepCover').addEventListener('click', () => cmd('sleep', { on: false }));
@@ -357,7 +418,7 @@ sheet.addEventListener('pointercancel', endSwipe);
 
 async function loadSystem() {
   try { app.sys = await (await fetch('/api/system')).json(); } catch { app.sys = null; }
-  if (app.view === 'settings' || app.view === 'phone') render(); else update();
+  if (app.view === 'phone') render(); else update();
 }
 
 // ---------- rendering ----------
@@ -394,15 +455,31 @@ function header() {
     <div class="clock js-clock" style="font-size:20px;color:var(--text-2)">${clock()}</div>${close}</div>`;
 }
 
+// On the sign, Home, Lights and Settings are built once and kept: going back to one re-attaches the
+// built page and patches its values, instead of rebuilding it. Rebuilding Settings cost ~45 ms of
+// script plus ~25 ms of layout per visit on the Pi. Each kept page has a key of whatever its markup
+// depends on beyond the values its update function patches; a changed key rebuilds it.
+const viewCache = new Map();
+const CACHED = SCREEN ? { home: () => '', settings: () => '', lights: () => `${!!app.layout}|${app.state.lights_connected}` } : {};
 function render() {
   if (!app.state) return;
   const scroll = $('.body', sheet)?.scrollTop || 0;
   const views = { home: homeView, library: libraryView, lights: lightsView, settings: settingsView, phone: phoneView, add: addView,
     wifi: wifiView, join: joinView, album: albumView };
   sheet.classList.toggle('full', app.view !== 'home' && SCREEN);
-  sheet.innerHTML = header() + `<div class="body">${(views[app.view] || homeView)()}</div>` + '<div class="handle"></div>';
-  const body = $('.body', sheet);
-  if (body) body.scrollTop = scroll;
+  const key = CACHED[app.view]?.();
+  let body = key === undefined ? null : viewCache.get(app.view);
+  if (body && body._key !== key) body = null;
+  if (!body) {
+    body = document.createElement('div');
+    body.className = 'body';
+    body.innerHTML = (views[app.view] || homeView)();
+    if (key !== undefined) { body._key = key; viewCache.set(app.view, body); }
+  }
+  sheetIn.innerHTML = header();
+  sheetIn.append(body);
+  sheetIn.insertAdjacentHTML('beforeend', '<div class="handle"></div>');
+  body.scrollTop = scroll;
   bind();
   update(true);
 }
@@ -412,7 +489,7 @@ function update(fromRender = false) {
   if (!app.state || dragging) return;
   if (app.view === 'home') { updateNow(); updateHome(); }
   else if (app.view === 'lights') updateLights();
-  else if (app.view === 'settings') { if (!fromRender) render(); }
+  else if (app.view === 'settings') updateSettings();
   else if (app.view === 'library') { if (!fromRender) updateLibrary(); }
   else if (app.view === 'wifi') { if (!fromRender) render(); }
   else if (app.view === 'album') { if (!fromRender) render(); }
@@ -614,6 +691,9 @@ function updateLights() {
   if (pb) { pb.classList.toggle('gold', l.on); $('span', pb).textContent = l.on ? 'On' : 'Off'; }
   $('#hsLB')?._set?.(l.brightness);
   $('#hsLS')?._set?.(l.speed);
+  // Draw the preview now, from the last frame: frames identical to the last one are skipped, so with
+  // the lights off (or a still colour) no new frame would ever arrive to draw a freshly built page.
+  drawLights($('#ltBig'));
 }
 
 // Live LED preview. Kept cheap so video under the frosted menu never drops frames: the P shape is
@@ -682,15 +762,66 @@ function glowSprite(R, G, B, lum, r, gr, dpr) {
 }
 
 // ----- settings -----
+// Settings is built once (see render) and then patched by updateSettings: toggles, options, times
+// and the brightness slider are set in place, and the few groups whose text depends on live system
+// info ("parts") are rebuilt only when their text actually changed. Before, every state change and
+// every system refresh rebuilt the whole page (~70 ms on the Pi).
+const infoItem = (k, v) => `<div class="item"><div class="k">${k}</div><div class="v">${esc(v ?? '—')}</div></div>`;
+const SET_PARTS = {
+  dl: () => `<div class="item"><div class="k">YouTube downloader<small>${esc(app.state.updater.message ||
+      'YouTube changes often. If downloads start failing, update this.')}</small></div>
+      <div class="v">${esc(app.sys?.ytdlp || '')}</div>
+      <button class="btn" data-act="updateDl" ${app.state.updater.status === 'running' ? 'disabled' : ''}>
+        ${app.state.updater.status === 'running' ? '<div class="spin" style="width:20px;height:20px"></div>Updating' : `${icon('download')}Update`}</button></div>`,
+  backup: () => SCREEN ? `<div class="item"><div class="k">Back up from your phone or computer<small>Open ${esc((app.sys?.hostname || 'blockp') + '.local')}, go to Settings, then Backup. The backup has your settings and video list; restoring it re-downloads any missing videos.</small></div></div>`
+    : `<div class="item"><div class="k">Settings and video list<small>A small file. Restoring it puts your settings back and re-downloads any missing videos from their links.</small></div>
+        <a class="btn" href="/api/backup" download>${icon('download')}Download backup</a></div>
+      <div class="item"><div class="k">All photos<small>Every album as one zip file</small></div>
+        <a class="btn" href="/api/photos.zip" download>${icon('image')}Download photos</a></div>
+      <div class="item"><div class="k">Restore from a backup<small id="restoreMsg">Choose a blockp-backup file</small></div>
+        <label class="btn">${icon('rotate-cw')}Restore<input type="file" id="restoreFile" accept=".json,application/json" hidden></label></div>`,
+  net: () => `<div class="item"><div class="k">Wi-Fi<small>${esc(app.sys?.wifi || 'Not connected')}</small></div>
+      <button class="btn" data-act="wifi">${icon('wifi')}Change network</button></div>
+    ${infoItem('Address', 'http://' + (app.sys?.hostname || 'blockp') + '.local')}${infoItem('IP address', app.sys?.ip)}`,
+  sys: () => {
+    const sys = app.sys;
+    return `${infoItem('Temperature', sys?.temp_c != null ? sys.temp_c + ' °C' : null)}
+      ${infoItem('Storage', sys ? `${sys.disk_used_gb} of ${sys.disk_total_gb} GB used` : null)}
+      ${infoItem('Library', sys ? `${sys.videos} videos, ${sys.albums} photo albums` : null)}
+      ${infoItem('Running for', sys ? sys.uptime_h + ' hours' : null)}
+      ${infoItem('Software', 'Block P ' + app.state.version)}
+      <div class="item"><div class="row">
+        <button class="btn" data-power="restart_screen">${icon('refresh-cw')}Restart screen</button>
+        <button class="btn" data-power="reboot">${icon('rotate-cw')}Restart sign</button>
+        <button class="btn danger" data-power="shutdown">${icon('power')}Shut down</button></div></div>`;
+  },
+};
+const partHtml = {};
+function setPart(name) {
+  const h = SET_PARTS[name]();
+  partHtml[name] = h;
+  return `<div class="group" data-part="${name}">${h}</div>`;
+}
+function updateSettings() {
+  $$('[data-tog]').forEach(b => b.classList.toggle('on', !!get(b.dataset.tog)));
+  $$('[data-seg]').forEach(b => b.classList.toggle('on', String(get(b.dataset.seg)) === b.dataset.v));
+  $$('.stepper').forEach(st => {
+    const v = $('.v', st), t = String(get($('[data-step]', st).dataset.step));
+    if (v.textContent !== t) v.textContent = t;
+  });
+  $('#hsBright')?._set?.(S().display.brightness);
+  $$('[data-part]').forEach(g => {
+    const name = g.dataset.part, h = SET_PARTS[name]();
+    if (h !== partHtml[name]) { partHtml[name] = h; g.innerHTML = h; }
+  });
+}
 function settingsView() {
-  const s = S(), sys = app.sys;
   const tog = (label, path, sub = '') => `<div class="item"><div class="k">${label}${sub ? `<small>${sub}</small>` : ''}</div>
     <button class="toggle ${get(path) ? 'on' : ''}" data-tog="${path}"></button></div>`;
   const seg = (label, path, opts, sub = '') => `<div class="item"><div class="k">${label}${sub ? `<small>${sub}</small>` : ''}</div>
     <div class="seg">${opts.map(([v, t]) => `<button class="${String(get(path)) === String(v) ? 'on' : ''}" data-seg="${path}" data-v="${v}">${t}</button>`).join('')}</div></div>`;
   const time = (label, path) => `<div class="item"><div class="k">${label}</div><div class="stepper">
     <button data-step="${path}" data-d="-30">−</button><span class="v">${esc(get(path))}</span><button data-step="${path}" data-d="30">+</button></div></div>`;
-  const info = (k, v) => `<div class="item"><div class="k">${k}</div><div class="v">${esc(v ?? '—')}</div></div>`;
   return `
     <h3>Display</h3><div class="group">
       <div class="item"><div class="k">Brightness</div><div class="hs" id="hsBright" style="max-width:420px"><div class="fill"></div><div class="lab">${icon('sun')}</div></div></div>
@@ -711,38 +842,10 @@ function settingsView() {
       ${tog('Turn off at night', 'schedule.enabled', 'The screen and lights go dark, and wake on touch')}
       ${time('Turn off at', 'schedule.off')}${time('Turn on at', 'schedule.on')}
     </div>
-    <h3>Downloader</h3><div class="group">
-      <div class="item"><div class="k">YouTube downloader<small>${esc(app.state.updater.message ||
-        'YouTube changes often. If downloads start failing, update this.')}</small></div>
-        <div class="v">${esc(sys?.ytdlp || '')}</div>
-        <button class="btn" data-act="updateDl" ${app.state.updater.status === 'running' ? 'disabled' : ''}>
-          ${app.state.updater.status === 'running' ? '<div class="spin" style="width:20px;height:20px"></div>Updating' : `${icon('download')}Update`}</button></div>
-    </div>
-    <h3>Backup</h3><div class="group">
-      ${SCREEN ? `<div class="item"><div class="k">Back up from your phone or computer<small>Open ${esc((sys?.hostname || 'blockp') + '.local')}, go to Settings, then Backup. The backup has your settings and video list; restoring it re-downloads any missing videos.</small></div></div>`
-      : `<div class="item"><div class="k">Settings and video list<small>A small file. Restoring it puts your settings back and re-downloads any missing videos from their links.</small></div>
-          <a class="btn" href="/api/backup" download>${icon('download')}Download backup</a></div>
-        <div class="item"><div class="k">All photos<small>Every album as one zip file</small></div>
-          <a class="btn" href="/api/photos.zip" download>${icon('image')}Download photos</a></div>
-        <div class="item"><div class="k">Restore from a backup<small id="restoreMsg">Choose a blockp-backup file</small></div>
-          <label class="btn">${icon('rotate-cw')}Restore<input type="file" id="restoreFile" accept=".json,application/json" hidden></label></div>`}
-    </div>
-    <h3>Network</h3><div class="group">
-      <div class="item"><div class="k">Wi-Fi<small>${esc(sys?.wifi || 'Not connected')}</small></div>
-        <button class="btn" data-act="wifi">${icon('wifi')}Change network</button></div>
-      ${info('Address', 'http://' + (sys?.hostname || 'blockp') + '.local')}${info('IP address', sys?.ip)}
-    </div>
-    <h3>System</h3><div class="group">
-      ${info('Temperature', sys?.temp_c != null ? sys.temp_c + ' °C' : null)}
-      ${info('Storage', sys ? `${sys.disk_used_gb} of ${sys.disk_total_gb} GB used` : null)}
-      ${info('Library', sys ? `${sys.videos} videos, ${sys.albums} photo albums` : null)}
-      ${info('Running for', sys ? sys.uptime_h + ' hours' : null)}
-      ${info('Software', 'Block P ' + app.state.version)}
-      <div class="item"><div class="row">
-        <button class="btn" data-power="restart_screen">${icon('refresh-cw')}Restart screen</button>
-        <button class="btn" data-power="reboot">${icon('rotate-cw')}Restart sign</button>
-        <button class="btn danger" data-power="shutdown">${icon('power')}Shut down</button></div></div>
-    </div>
+    <h3>Downloader</h3>${setPart('dl')}
+    <h3>Backup</h3>${setPart('backup')}
+    <h3>Network</h3>${setPart('net')}
+    <h3>System</h3>${setPart('sys')}
     <h3>About</h3><div class="group"><div class="item"><div class="k"><small style="font-size:15px;line-height:1.5">
       Built for the Purdue “All-American” Marching Band keepsake sign. Inter typeface and Pinyon Script (SIL Open Font License),
       Lucide icons (ISC license). Formation photo: Wikimedia Commons, public domain.</small></div></div></div>
@@ -884,10 +987,14 @@ function startJoin(n) {
 
 // ---------- wiring up controls ----------
 function bindSlider(el, { min = 0, max = 100, vertical = false, live, commit, tap, pct = true }) {
-  if (!el) return;
+  if (!el || el._set) return;            // missing, or already bound (a kept page shown again)
   const fill = $('.fill', el), label = $('.pct', el);
-  let drag = false, cur = 0, last = 0, moved = false, startX = 0, startY = 0;
+  let drag = false, cur = 0, last = 0, moved = false, startX = 0, startY = 0, shown = min, startVal = min;
+  // Whole-number scales (volume, brightness) send whole numbers, so the slider ends exactly where the
+  // server's value lands (it truncates: 82.6 showed as 83, then settled back to 82)
+  const out = v => (max - min >= 50 ? Math.round(v) : v);
   const show = v => {
+    shown = v;
     const f = (v - min) / (max - min) * 100;
     if (vertical) fill.style.height = f + '%'; else fill.style.width = f + '%';
     if (label && pct) label.textContent = Math.round(v) + '%';
@@ -896,15 +1003,21 @@ function bindSlider(el, { min = 0, max = 100, vertical = false, live, commit, ta
   const move = e => {
     if (tap && !moved) return;            // could still be a tap: don't jump the value yet
     const r = el.getBoundingClientRect();
-    let f = vertical ? 1 - (e.clientY - r.top) / r.height : (e.clientX - r.left) / r.width;
-    f = Math.max(0, Math.min(1, f));
-    cur = min + f * (max - min);
+    if (vertical) {
+      // The tall sliders on the sign move with the finger from wherever the value is, like a phone's
+      // control centre, instead of jumping to where the finger landed. Volume used to sit still for
+      // the first 6 px (waiting to see if it was a tap, which mutes) and then leap to the finger.
+      cur = Math.max(min, Math.min(max, startVal + (startY - e.clientY) / r.height * (max - min)));
+    } else {
+      const f = Math.max(0, Math.min(1, (e.clientX - r.left) / r.width));
+      cur = min + f * (max - min);
+    }
     show(cur);
     const now = performance.now();
-    if (now - last > 90) { last = now; live?.(cur); }
+    if (now - last > 90) { last = now; live?.(out(cur)); }
   };
   el.addEventListener('pointerdown', e => {
-    drag = true; moved = false; startX = e.clientX; startY = e.clientY; dragging++;
+    drag = true; moved = false; startX = e.clientX; startY = e.clientY; startVal = shown; dragging++;
     el.setPointerCapture(e.pointerId); el.classList.add('drag'); move(e); e.stopPropagation();
   });
   el.addEventListener('pointermove', e => {
@@ -915,7 +1028,7 @@ function bindSlider(el, { min = 0, max = 100, vertical = false, live, commit, ta
   const end = () => {
     if (!drag) return;
     drag = false; dragging = Math.max(0, dragging - 1); el.classList.remove('drag');
-    if (tap && !moved) tap(); else commit?.(cur, moved);
+    if (tap && !moved) tap(); else { show(out(cur)); commit?.(out(cur), moved); }
   };
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
@@ -964,7 +1077,7 @@ function bind() {
     if (d.tog) return setSetting(d.tog, !get(d.tog));
     if (d.seg) {
       const v = isNaN(+d.v) ? d.v : +d.v;
-      if (d.seg === 'screen.rotation') return cmd('rotate', { degrees: v });
+      if (d.seg === 'screen.rotation') { S().screen.rotation = v; stateChanged(); return cmd('rotate', { degrees: v }); }
       return setSetting(d.seg, v);
     }
     if (d.step) {

@@ -64,10 +64,25 @@ body.open #sheet { transform: none; }
 #sheet.full { height: calc(100% - 14px); }
 /* Full pages (Settings, Library, Lights, Phone) use "frozen frost": a tiny snapshot of what's playing,
    blurred once, instead of re-blurring live video every frame. Live blur under a full page made
-   scrolling hitch (6 slow frames in 89, worst 84 ms); this measured smooth. */
+   scrolling hitch (6 slow frames in 89, worst 84 ms); this measured smooth. The blur and tint are baked
+   into the canvas pixels by frost() in app.js: a CSS filter here is re-applied every frame on the Pi. */
 #frost { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 9; pointer-events: none; opacity: 0;
-  filter: blur(12px) saturate(130%) brightness(.8); transform: scale(1.08); transition: opacity .3s; }
+  transform: scale(1.08); transition: opacity .3s; }
 body.fullpage #frost { opacity: 1; }
+/* The drop-down's glass on the sign is frozen frost too: #sheetFrost is the same snapshot, inside the
+   sheet so it slides with it, lined up with the screen when the sheet is down. A live backdrop blur on
+   a moving layer re-blurs every frame: measured on the Pi, the slide drew 11-13 of its 18 frames and
+   dropped 16 of 282 video frames over three open/close cycles; with the snapshot, 16-18 and 1. */
+#sheetIn { display: contents; }
+/* Sits above the sheet's own tint (negative z-index paints over the background), so the brightness(.58)
+   baked in by frost() stands in for the --glass tint. left: -19px is the 18 px inset plus the 1 px border. */
+#sheetFrost { position: absolute; left: -19px; top: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none;
+  transform: scale(1.08); }
+/* The sign's scrolling pages on their own GPU layer, so a scroll only moves it (measured smoother
+   together with the baked frost) */
+body.screen .body { will-change: scroll-position; }
+body.screen #sheet { -webkit-backdrop-filter: none; backdrop-filter: none; overflow: hidden; isolation: isolate; }
+body.remote #sheetFrost, body.fullpage #sheetFrost { display: none; }
 body.fullpage #sheet { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(18, 18, 20, .66); }
 body.remote #frost { display: none; }
 #sheet.dragging { transition: none; }
