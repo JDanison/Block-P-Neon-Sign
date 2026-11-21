@@ -7,7 +7,8 @@ from pathlib import Path
 import qrcode, qrcode.image.svg
 from aiohttp import web, WSMsgType
 
-import downloader, hw, library, lights as L, settings as S
+import downloader, hw, library, lights as L, schedule as SCH, settings as S
+from datetime import datetime
 
 HERE = Path(__file__).resolve().parent
 UI = HERE / "ui"
@@ -158,17 +159,52 @@ class Sign:
         await self.push_state()
 
     async def schedule_loop(self):
+        """Once a minute: the night schedule, then any scheduled events due this minute. An event due
+        while the sign was off is skipped, not run late."""
         last = None
         while True:
-            sch = self.settings["schedule"]
-            now = time.strftime("%H:%M")
-            if sch["enabled"] and now != last:
-                if now == sch["off"]:
-                    await self.set_sleep(True)
-                elif now == sch["on"]:
-                    await self.set_sleep(False)
-            last = now
+            now = datetime.now()
+            minute = now.strftime("%Y-%m-%d %H:%M")
+            if minute != last:
+                last = minute
+                sch = self.settings["schedule"]
+                if sch["enabled"]:
+                    if now.strftime("%H:%M") == sch["off"]:
+                        await self.set_sleep(True)
+                    elif now.strftime("%H:%M") == sch["on"]:
+                        await self.set_sleep(False)
+                for e in SCH.due(self.settings["events"], now):
+                    try:
+                        await self.run_action(e["action"])
+                    except Exception as ex:                  # one bad event must not stop the loop
+                        print("scheduled event failed:", e, ex, flush=True)
+                    if e.get("date"):                        # one-date events are done once run
+                        self.settings["events"] = [x for x in self.settings["events"] if x["id"] != e["id"]]
+                        self.save_soon()
+                        await self.push_state()
             await asyncio.sleep(20)
+
+    async def run_action(self, a):
+        """A scheduled event's action. Anything that shows something wakes the sign from night mode first."""
+        t, st = a["type"], self.settings
+        if t not in ("sleep", "lights_off"):
+            await self.set_sleep(False)
+        if t == "preset":
+            p = next((p for p in st["presets"] if p["id"] == a.get("preset")), None)
+            if p:
+                st["lights"].update(p["lights"])
+        elif t in ("lights_on", "lights_off"):
+            st["lights"]["on"] = t == "lights_on"
+        elif t == "sleep":
+            await self.set_sleep(True)
+        elif t in ("videos", "shuffle"):
+            await self.play(self.rotation_items(), loop=True, shuffle=t == "shuffle")
+        elif t == "photos":
+            await self.play(self.photo_items(self.lib["albums"]), loop=True, shuffle=True)
+        elif t == "idle":
+            await self.stop()
+        self.save_soon()
+        await self.push_state()
 
     # ---------- downloads ----------
     async def start_download(self, url, title=None, year=None):
@@ -321,6 +357,39 @@ class Sign:
                     st["lights"][k] = c[k]
         elif t == "settings":
             self.settings = st = S.patch(st, c.get("patch", {}))
+        elif t == "preset_save":
+            if len(st["presets"]) >= SCH.MAX_PRESETS:
+                return await self.toast("That’s the most presets the sign can keep")
+            st["presets"].append(SCH.make_preset(st["presets"], st["lights"], c.get("name")))
+            await self.toast(f"Saved as {st['presets'][-1]['name']}")
+        elif t == "preset_apply":
+            p = next((p for p in st["presets"] if p["id"] == c.get("id")), None)
+            if p:
+                st["lights"].update(p["lights"])
+        elif t == "preset_rename":
+            for p in st["presets"]:
+                if p["id"] == c.get("id"):
+                    p["name"] = SCH.clean_name(c.get("name"), p["name"])
+        elif t == "preset_delete":                      # events that applied it go with it
+            st["presets"] = [p for p in st["presets"] if p["id"] != c.get("id")]
+            st["events"] = [e for e in st["events"] if e["action"].get("preset") != c.get("id")]
+        elif t == "event_save":
+            e = SCH.clean_event(c.get("event") or {}, st["presets"])
+            if not e:
+                return await self.toast("That event isn’t complete")
+            i = next((i for i, x in enumerate(st["events"]) if x["id"] == e["id"]), None)
+            if i is not None:
+                st["events"][i] = e
+            elif len(st["events"]) >= SCH.MAX_EVENTS:
+                return await self.toast("That’s the most events the sign can keep")
+            else:
+                st["events"].append(e)
+        elif t == "event_enable":
+            for e in st["events"]:
+                if e["id"] == c.get("id"):
+                    e["enabled"] = bool(c.get("on"))
+        elif t == "event_delete":
+            st["events"] = [e for e in st["events"] if e["id"] != c.get("id")]
         elif t == "sleep":
             await self.set_sleep(bool(c.get("on", not self.sleeping)))
         elif t == "rotate":

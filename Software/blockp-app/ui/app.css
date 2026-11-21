@@ -260,14 +260,31 @@ h3 { font-size: 15px; text-transform: uppercase; letter-spacing: .08em; color: v
 
 /* lights page */
 .lightsPage { display: grid; grid-template-columns: 330px 1fr; gap: 26px; height: 100%; }
-.lightsPage .prev { background: rgba(0, 0, 0, .35); border-radius: 24px; display: grid; place-items: center; padding: 18px; }
-.lightsPage canvas { width: 100%; height: 100%; }
+.lightsPage .prev { background: rgba(0, 0, 0, .35); border-radius: 24px; padding: 18px; position: relative; }
+/* Pinned to the box: sized by "100%" alone, the canvas took its height from its own drawing size and
+   grew past the 300 px box on phones and tablets, over the Presets row and the header */
+.lightsPage canvas { position: absolute; left: 18px; top: 18px; width: calc(100% - 36px); height: calc(100% - 36px); }
 .chips { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
 .chip { padding: 14px 10px; border-radius: 16px; background: var(--tile); font-weight: 600; font-size: 15px; text-align: center; }
 .chip.on { background: #fff; color: #111; }
 .swatches { display: flex; gap: 14px; flex-wrap: wrap; }
 .sw { width: 54px; height: 54px; border-radius: 50%; border: 3px solid transparent; box-shadow: inset 0 0 0 2px rgba(0, 0, 0, .25); }
 .sw.on { border-color: #fff; }
+.chip.add { display: flex; align-items: center; justify-content: center; gap: 6px; color: var(--text-2); }
+.btn.slim { padding: 9px 16px; font-size: 15px; border-radius: 13px; }
+.btn.slim .ic { font-size: 17px; }
+
+/* schedule */
+.evrow { cursor: pointer; }
+.evt { font-size: 22px; font-weight: 700; margin-right: 12px; font-variant-numeric: tabular-nums; }
+.evw { color: var(--text-2); font-size: 16px; font-weight: 600; }
+.days { display: flex; flex-wrap: wrap; gap: 6px; justify-content: flex-end; }
+.days button { min-width: 52px; height: 42px; border-radius: 12px; background: var(--tile-hi); font-weight: 600; font-size: 15px; color: var(--text-2); }
+.days button.on { background: rgba(255, 255, 255, .9); color: #111; }
+.stepper .v.wide { min-width: 150px; }
+.note { color: var(--text-2); font-size: 15px; margin: 16px 4px 0; line-height: 1.45; }
+input[type=date], input[type=time] { padding: 12px 14px; font: inherit; font-size: 17px; color: #fff; color-scheme: dark;
+  background: rgba(255, 255, 255, .1); border: 1px solid var(--line); border-radius: 14px; outline: none; }
 
 /* phone / QR */
 .qrWrap { display: flex; gap: 40px; align-items: center; justify-content: center; height: 100%; padding: 10px; }
@@ -335,6 +352,10 @@ body.remote #sleepCover { display: none; }
   .lightsPage .prev { height: 300px; }
   .qrWrap { flex-direction: column; }
   .chips { grid-template-columns: repeat(2, 1fr); }
+  .item:has(.days), .item:has(input[type=date]), .item:has(input[type=time]) { flex-wrap: wrap; }
+  .days { justify-content: flex-start; }
+  .days button { min-width: 44px; }
+  .dialog .box { width: calc(100vw - 32px); max-width: 440px; }
 }
 
 /* Size-specific rules last, so they override the base styles above */

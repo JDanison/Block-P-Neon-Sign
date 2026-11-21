@@ -144,6 +144,27 @@ function confirmBox(title, text, ok = 'OK', danger = false) {
   });
 }
 
+// A text prompt (phones and PCs only: the sign has no keyboard here). Resolves to the text, or null.
+function promptBox(title, text, ok = 'OK') {
+  return new Promise(res => {
+    const d = document.createElement('div');
+    d.className = 'dialog';
+    d.innerHTML = `<div class="box glass"><b>${esc(title)}</b><p>${esc(text)}</p>
+      <input type="text" maxlength="40" style="margin-bottom:16px"><div class="row">
+      <button class="btn" data-a="0">Cancel</button><button class="btn primary" data-a="1">${esc(ok)}</button></div></div>`;
+    const input = $('input', d);
+    const done = v => { d.remove(); res(v); };
+    d.addEventListener('click', e => {
+      const a = e.target.closest('[data-a]');
+      if (a) done(a.dataset.a === '1' ? input.value.trim() : null);
+      else if (e.target === d) done(null);
+    });
+    input.addEventListener('keydown', e => { if (e.key === 'Enter') done(input.value.trim()); });
+    document.body.append(d);
+    input.focus();
+  });
+}
+
 // ---------- playback (sign screen only) ----------
 const vid = $('#vid'), idleVid = $('#idleVid'), idleImg = $('#idleImg'), photos = [$('#photoA'), $('#photoB')];
 let loadedSerial = -1, photoFlip = 0, slide = { timer: null, left: 0, start: 0, index: -1 }, idleStyle = null;
@@ -423,11 +444,12 @@ async function loadSystem() {
 
 // ---------- rendering ----------
 const TITLES = { library: 'Library', lights: 'Lights', settings: 'Settings', phone: 'Use your phone', add: 'Add',
-  wifi: 'Wi-Fi', join: 'Join a network', album: 'Album' };
+  wifi: 'Wi-Fi', join: 'Join a network', album: 'Album', schedule: 'Schedule', event: 'Event' };
 // Phones, tablets and computers: a header with the sign's name, a live connection badge and tabs
 // (bottom tab bar on phones, top tabs on wider screens). Sub-pages keep a back button.
 const TABS = [['home', 'house', 'Home'], ['library', 'film', 'Library'], ['lights', 'lightbulb', 'Lights'], ['settings', 'settings', 'Settings']];
-const TAB_OF = { home: 'home', library: 'library', add: 'library', lights: 'lights', settings: 'settings', wifi: 'settings', join: 'settings', phone: 'settings', album: 'library' };
+const TAB_OF = { home: 'home', library: 'library', add: 'library', lights: 'lights', settings: 'settings', wifi: 'settings', join: 'settings', phone: 'settings', album: 'library',
+  schedule: 'settings', event: 'settings' };
 function remoteHeader() {
   const tab = TAB_OF[app.view];
   const top = TABS.some(([v]) => v === app.view);
@@ -460,12 +482,14 @@ function header() {
 // script plus ~25 ms of layout per visit on the Pi. Each kept page has a key of whatever its markup
 // depends on beyond the values its update function patches; a changed key rebuilds it.
 const viewCache = new Map();
-const CACHED = SCREEN ? { home: () => '', settings: () => '', lights: () => `${!!app.layout}|${app.state.lights_connected}` } : {};
+// The Lights page's markup depends on these (anything else it shows is patched by updateLights)
+const lightsKey = () => `${!!app.layout}|${app.state.lights_connected}|${app.presetEdit}|${JSON.stringify(S().presets.map(p => [p.id, p.name]))}`;
+const CACHED = SCREEN ? { home: () => '', settings: () => '', lights: lightsKey } : {};
 function render() {
   if (!app.state) return;
   const scroll = $('.body', sheet)?.scrollTop || 0;
   const views = { home: homeView, library: libraryView, lights: lightsView, settings: settingsView, phone: phoneView, add: addView,
-    wifi: wifiView, join: joinView, album: albumView };
+    wifi: wifiView, join: joinView, album: albumView, schedule: scheduleView, event: eventView };
   sheet.classList.toggle('full', app.view !== 'home' && SCREEN);
   const key = CACHED[app.view]?.();
   let body = key === undefined ? null : viewCache.get(app.view);
@@ -476,6 +500,8 @@ function render() {
     body.innerHTML = (views[app.view] || homeView)();
     if (key !== undefined) { body._key = key; viewCache.set(app.view, body); }
   }
+  if (app.view === 'lights') app.lightsKey = lightsKey();
+  if (app.view === 'schedule') app.schedKey = schedKey();
   sheetIn.innerHTML = header();
   sheetIn.append(body);
   sheetIn.insertAdjacentHTML('beforeend', '<div class="handle"></div>');
@@ -488,7 +514,8 @@ function render() {
 function update(fromRender = false) {
   if (!app.state || dragging) return;
   if (app.view === 'home') { updateNow(); updateHome(); }
-  else if (app.view === 'lights') updateLights();
+  else if (app.view === 'lights') { if (!fromRender && lightsKey() !== app.lightsKey) render(); else updateLights(); }
+  else if (app.view === 'schedule') { if (!fromRender && schedKey() !== app.schedKey) render(); }
   else if (app.view === 'settings') updateSettings();
   else if (app.view === 'library') { if (!fromRender) updateLibrary(); }
   else if (app.view === 'wifi') { if (!fromRender) render(); }
@@ -676,6 +703,7 @@ function lightsView() {
   return `<div class="lightsPage"><div class="prev"><canvas class="leds" id="ltBig"></canvas></div><div>
     <div class="row"><button class="btn ${l.on ? 'gold' : ''}" data-act="lightsPower" id="lpBtn">${icon('power')}<span>${l.on ? 'On' : 'Off'}</span></button>
       ${app.state.lights_connected ? '' : '<span style="color:var(--text-2);font-size:15px">Preview only: the LED strip isn’t connected yet</span>'}</div>
+    ${presetsHtml()}
     <h3>Effect</h3><div class="chips">${lay.modes.map(m => `<button class="chip" data-mode="${m}">${MODE_NAMES[m] || m}</button>`).join('')}</div>
     <h3>Color</h3><div class="swatches">${Object.entries(colors).map(([k, hex]) =>
       `<button class="sw" data-color="${k in lay.colors ? k : hex}" style="background:${hex}"></button>`).join('')}</div>
@@ -683,8 +711,24 @@ function lightsView() {
     <h3>Speed</h3><div class="row"><div class="hs" id="hsLS"><div class="fill"></div><div class="lab">${icon('sparkles')}</div></div></div>
   </div></div>`;
 }
+// Presets: saved light looks, applied with one tap and usable in the schedule. On a phone or PC you
+// name one as you save it; on the sign it's numbered (rename it from a phone). Edit shows rename
+// (phone/PC) and delete.
+function presetsHtml() {
+  const ps = S().presets, editing = app.presetEdit;
+  const head = `<div class="row" style="margin:26px 4px 12px"><h3 style="margin:0;flex:1">Presets</h3>
+    <button class="btn slim" data-act="schedule">${icon('clock')}Schedule</button>
+    ${ps.length ? `<button class="btn slim ${editing ? 'gold' : ''}" data-act="presetEdit">${icon(editing ? 'check' : 'pencil')}${editing ? 'Done' : 'Edit'}</button>` : ''}</div>`;
+  if (editing) return head + `<div class="group">${ps.map(p => `<div class="item">
+      ${SCREEN ? `<div class="k">${esc(p.name)}</div>` : `<input type="text" value="${esc(p.name)}" data-presetname="${esc(p.id)}" style="flex:1;min-width:140px">`}
+      <button class="round danger" data-act="presetDelete" data-id="${esc(p.id)}">${icon('trash-2')}</button></div>`).join('')}</div>`;
+  return head + `<div class="chips">${ps.map(p => `<button class="chip" data-act="presetApply" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}
+    <button class="chip add" data-act="presetSave">${icon('plus')}Save current</button></div>`;
+}
+const presetMatches = (p, l) => Object.entries(p.lights).every(([k, v]) => l[k] === v);
 function updateLights() {
   const l = S().lights;
+  $$('[data-act=presetApply]').forEach(b => b.classList.toggle('on', presetMatches(S().presets.find(p => p.id === b.dataset.id) || { lights: { x: 1 } }, l)));
   $$('[data-mode]').forEach(b => b.classList.toggle('on', b.dataset.mode === l.mode));
   $$('[data-color]').forEach(b => b.classList.toggle('on', b.dataset.color === l.color));
   const pb = $('#lpBtn');
@@ -736,6 +780,10 @@ function drawLights(c) {
   });
   ctx.globalAlpha = 1;
 }
+// Unchanged frames aren't redrawn, so redraw the previews when the window changes size (a phone
+// turning sideways), or they'd keep the old size until the lights next change
+let resizeTimer;
+addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(() => $$('canvas.leds').forEach(c => drawLights(c)), 150); });
 // Each LED's glow, drawn once per colour and size and then stamped, instead of building 204
 // gradients every frame. The colour is the LED's hue at full level (steps of 8, so a rainbow
 // needs a couple of hundred sprites at most); the level is applied with globalAlpha.
@@ -761,6 +809,122 @@ function glowSprite(R, G, B, lum, r, gr, dpr) {
   return s;
 }
 
+// ----- schedule -----
+// Events run on the sign at a time, either every week on chosen days or once on a date (then they
+// remove themselves). Days are numbered Monday = 0, as the server (Python) counts them.
+const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+const ACTION_NAMES = { preset: 'Light preset', lights_on: 'Lights on', lights_off: 'Lights off', sleep: 'Night mode',
+  wake: 'Wake the sign', videos: 'Play videos', shuffle: 'Shuffle videos', photos: 'Photo slideshow', idle: 'Idle screen' };
+const pad2 = n => String(n).padStart(2, '0');
+const isoDate = d => `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
+const todayIso = () => isoDate(new Date());
+const parseDate = s => { const [y, m, d] = s.split('-').map(Number); return new Date(y, m - 1, d); };
+function fmtTime(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  return `${(h + 11) % 12 + 1}:${pad2(m)} ${h < 12 ? 'AM' : 'PM'}`;
+}
+function fmtDate(s) {
+  const d = parseDate(s), sameYear = d.getFullYear() === new Date().getFullYear();
+  return d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', ...(sameYear ? {} : { year: 'numeric' }) });
+}
+function fmtDays(days) {
+  const k = days.join('');
+  return k === '0123456' ? 'Every day' : k === '01234' ? 'Weekdays' : k === '56' ? 'Weekends' : days.map(i => DAYS[i]).join(', ');
+}
+function actionLabel(a) {
+  if (a.type !== 'preset') return ACTION_NAMES[a.type] || a.type;
+  return `Lights: ${S().presets.find(p => p.id === a.preset)?.name || 'a deleted preset'}`;
+}
+// The next time an event will run, or null if a one-date event's moment has passed (the sign was off)
+function nextRun(e, from = new Date()) {
+  const [h, m] = e.time.split(':').map(Number);
+  if (e.date) { const d = parseDate(e.date); d.setHours(h, m, 0, 0); return d > from ? d : null; }
+  for (let i = 0; i <= 7; i++) {
+    const d = new Date(from); d.setDate(d.getDate() + i); d.setHours(h, m, 0, 0);
+    if (d > from && e.days.includes((d.getDay() + 6) % 7)) return d;
+  }
+  return null;
+}
+const describeEvent = e => `${actionLabel(e.action)}, ${e.date ? fmtDate(e.date) : fmtDays(e.days)} at ${fmtTime(e.time)}`;
+const schedKey = () => JSON.stringify([S().events, S().presets.map(p => [p.id, p.name])]);
+
+function scheduleView() {
+  const evs = S().events.map(e => ({ e, next: nextRun(e) }))
+    .sort((a, b) => (a.next ?? Infinity) - (b.next ?? Infinity));
+  const rows = evs.map(({ e, next }) => `<div class="item evrow" data-act="evEdit" data-id="${esc(e.id)}">
+      <div class="k"><span class="evt">${fmtTime(e.time)}</span><span class="evw">${esc(e.date ? fmtDate(e.date) : fmtDays(e.days))}</span>
+        <small>${esc(actionLabel(e.action))}${e.date && !next ? ' · missed (the sign was off)' : ''}</small></div>
+      <button class="toggle ${e.enabled ? 'on' : ''}" data-act="evToggle" data-id="${esc(e.id)}"></button></div>`).join('');
+  return `<div class="row"><button class="btn primary" data-act="evNew">${icon('plus')}Add event</button></div>
+    ${rows ? `<div class="group" style="margin-top:18px">${rows}</div>`
+      : `<div class="empty"><b>Nothing scheduled</b>Add an event to change the lights, play videos or turn the sign off and on at a set time, every week or on one date.</div>`}
+    <p class="note">Times are the sign’s own clock. The night schedule in Settings still turns the sign off and on each night.</p>`;
+}
+
+function newEvent() {
+  const d = new Date(); d.setHours(d.getHours() + 1, 0, 0, 0);
+  const ps = S().presets;
+  return { id: null, enabled: true, kind: 'repeat', days: [], date: isoDate(d), time: `${pad2(d.getHours())}:00`,
+    action: ps.length ? { type: 'preset', preset: ps[0].id } : { type: 'lights_on' } };
+}
+function editEvent(e) {
+  if (!e) return null;
+  return { id: e.id, enabled: e.enabled, kind: e.date ? 'once' : 'repeat', days: [...(e.days || [])],
+    date: e.date || todayIso(), time: e.time, action: { ...e.action } };
+}
+function eventOut(ev) {
+  const out = { id: ev.id, enabled: ev.enabled, time: ev.time, action: { type: ev.action.type } };
+  if (ev.action.type === 'preset') out.action.preset = ev.action.preset;
+  if (ev.kind === 'once') out.date = ev.date; else out.days = ev.days;
+  return out;
+}
+function eventProblem(ev) {
+  if (!/^\d\d:\d\d$/.test(ev.time || '')) return 'Choose a time';
+  if (ev.kind === 'repeat' && !ev.days.length) return 'Choose at least one day';
+  if (ev.kind === 'once' && !/^\d{4}-\d\d-\d\d$/.test(ev.date || '')) return 'Choose a date';
+  if (ev.kind === 'once' && !nextRun(eventOut(ev))) return 'Choose a date and time in the future';
+  if (ev.action.type === 'preset' && !S().presets.some(p => p.id === ev.action.preset)) return 'Choose a preset';
+  return '';
+}
+const shiftDate = (s, days) => { const d = parseDate(s); d.setDate(d.getDate() + days); const t = isoDate(d); return t < todayIso() ? todayIso() : t; };
+function shiftTime(hhmm, mins) {
+  const [h, m] = hhmm.split(':').map(Number), t = ((h * 60 + m + mins) % 1440 + 1440) % 1440;
+  return `${pad2(t / 60 | 0)}:${pad2(t % 60)}`;
+}
+
+function eventView() {
+  const ev = app.ev;
+  if (!ev) return '';
+  const ps = S().presets, [h, m] = ev.time.split(':').map(Number);
+  const when = ev.kind === 'repeat'
+    ? `<div class="item"><div class="k">Days</div><div class="days">${DAYS.map((n, i) =>
+        `<button class="${ev.days.includes(i) ? 'on' : ''}" data-act="evDay" data-v="${i}">${n}</button>`).join('')}</div></div>`
+    : `<div class="item"><div class="k">Date</div>${SCREEN
+        ? `<div class="stepper"><button data-act="evDate" data-d="-1">−</button><span class="v wide">${esc(fmtDate(ev.date))}</span><button data-act="evDate" data-d="1">+</button></div>`
+        : `<input type="date" data-evin="date" min="${todayIso()}" value="${esc(ev.date)}">`}</div>`;
+  const time = SCREEN
+    ? `<div class="stepper"><button data-act="evTime" data-d="-60">−</button><span class="v">${(h + 11) % 12 + 1} ${h < 12 ? 'AM' : 'PM'}</span><button data-act="evTime" data-d="60">+</button></div>
+       <div class="stepper"><button data-act="evTime" data-d="-5">−</button><span class="v">:${pad2(m)}</span><button data-act="evTime" data-d="5">+</button></div>`
+    : `<input type="time" data-evin="time" value="${esc(ev.time)}">`;
+  const presetPick = ev.action.type !== 'preset' ? ''
+    : ps.length ? `<h3>Preset</h3><div class="chips">${ps.map(p =>
+        `<button class="chip ${ev.action.preset === p.id ? 'on' : ''}" data-act="evPreset" data-id="${esc(p.id)}">${esc(p.name)}</button>`).join('')}</div>`
+    : '<p class="note">No presets yet. Set up the lights on the Lights page and tap Save current.</p>';
+  return `<div class="group">
+      <div class="item"><div class="k">Repeat</div><div class="seg">
+        <button class="${ev.kind === 'repeat' ? 'on' : ''}" data-act="evKind" data-v="repeat">Every week</button>
+        <button class="${ev.kind === 'once' ? 'on' : ''}" data-act="evKind" data-v="once">One date</button></div></div>
+      ${when}
+      <div class="item"><div class="k">Time</div>${time}</div>
+    </div>
+    <h3>Do this</h3><div class="chips">${Object.entries(ACTION_NAMES).map(([k, n]) =>
+      `<button class="chip ${ev.action.type === k ? 'on' : ''}" data-act="evAction" data-v="${k}">${n}</button>`).join('')}</div>
+    ${presetPick}
+    <div class="row" style="margin-top:24px"><button class="btn primary" data-act="evSave">${icon('check')}Save</button>
+      ${ev.id ? `<button class="btn danger" data-act="evDelete">${icon('trash-2')}Delete</button>` : ''}</div>
+    <div style="height:20px"></div>`;
+}
+
 // ----- settings -----
 // Settings is built once (see render) and then patched by updateSettings: toggles, options, times
 // and the brightness slider are set in place, and the few groups whose text depends on live system
@@ -768,6 +932,13 @@ function glowSprite(R, G, B, lum, r, gr, dpr) {
 // every system refresh rebuilt the whole page (~70 ms on the Pi).
 const infoItem = (k, v) => `<div class="item"><div class="k">${k}</div><div class="v">${esc(v ?? '—')}</div></div>`;
 const SET_PARTS = {
+  sched: () => {
+    const evs = S().events.filter(e => e.enabled), next = evs.map(e => nextRun(e)).filter(Boolean).sort((a, b) => a - b)[0];
+    return `<div class="item"><div class="k">Scheduled events<small>${evs.length
+      ? `${evs.length} on${next ? ` · next ${esc(next.toLocaleString('en-US', { weekday: 'short', hour: 'numeric', minute: '2-digit' }))}` : ''}`
+      : 'Change the lights, play videos or turn the sign off and on at set times'}</small></div>
+      <button class="btn" data-act="schedule">${icon('clock')}Schedule</button></div>`;
+  },
   dl: () => `<div class="item"><div class="k">YouTube downloader<small>${esc(app.state.updater.message ||
       'YouTube changes often. If downloads start failing, update this.')}</small></div>
       <div class="v">${esc(app.sys?.ytdlp || '')}</div>
@@ -842,6 +1013,7 @@ function settingsView() {
       ${tog('Turn off at night', 'schedule.enabled', 'The screen and lights go dark, and wake on touch')}
       ${time('Turn off at', 'schedule.off')}${time('Turn on at', 'schedule.on')}
     </div>
+    <h3>Schedule</h3>${setPart('sched')}
     <h3>Downloader</h3>${setPart('dl')}
     <h3>Backup</h3>${setPart('backup')}
     <h3>Network</h3>${setPart('net')}
@@ -1096,7 +1268,50 @@ function bind() {
     if (d.addk) { app.addKind = d.addk; return render(); }
     switch (d.act) {
       case 'close': return closeSheet();
-      case 'back': app.libEdit = false; return go({ add: 'library', join: 'wifi', wifi: 'settings', album: 'library' }[app.view] || 'home');
+      case 'back': app.libEdit = false; app.presetEdit = false;
+        return go({ add: 'library', join: 'wifi', wifi: 'settings', album: 'library', event: 'schedule',
+          schedule: app.schedFrom || 'settings' }[app.view] || 'home');
+      // ----- presets -----
+      case 'presetApply': return cmd('preset_apply', { id: d.id });
+      case 'presetEdit': app.presetEdit = !app.presetEdit; return render();
+      case 'presetSave': {
+        let name = null;
+        if (!SCREEN) {
+          name = await promptBox('Save this look', 'Name it, like “Game day”.', 'Save');
+          if (name === null) return;
+        }
+        return cmd('preset_save', { name });
+      }
+      case 'presetDelete': {
+        const p = S().presets.find(x => x.id === d.id), uses = S().events.filter(e => e.action.preset === d.id).length;
+        if (await confirmBox(`Delete ${p?.name || 'this preset'}?`, uses ? `${uses} scheduled event${uses === 1 ? '' : 's'} that use${uses === 1 ? 's' : ''} it will be deleted too.` : 'The lights stay as they are now.', 'Delete', true))
+          cmd('preset_delete', { id: d.id });
+        return;
+      }
+      // ----- schedule -----
+      case 'schedule': app.schedFrom = app.view; return go('schedule');
+      case 'evNew': app.ev = newEvent(); return go('event');
+      case 'evEdit': app.ev = editEvent(S().events.find(e => e.id === d.id)); return app.ev ? go('event') : undefined;
+      case 'evToggle': {
+        const ev = S().events.find(e => e.id === d.id);
+        if (ev) { ev.enabled = !ev.enabled; t.classList.toggle('on', ev.enabled); cmd('event_enable', { id: d.id, on: ev.enabled }); }
+        return;
+      }
+      case 'evKind': app.ev.kind = d.v; return render();
+      case 'evDay': { const i = +d.v, days = app.ev.days; app.ev.days = days.includes(i) ? days.filter(x => x !== i) : [...days, i].sort(); return render(); }
+      case 'evDate': app.ev.date = shiftDate(app.ev.date, +d.d); return render();
+      case 'evTime': app.ev.time = shiftTime(app.ev.time, +d.d); return render();
+      case 'evAction': app.ev.action = { type: d.v, preset: d.v === 'preset' ? (app.ev.action.preset || S().presets[0]?.id) : undefined }; return render();
+      case 'evPreset': app.ev.action = { type: 'preset', preset: d.id }; return render();
+      case 'evSave': {
+        const problem = eventProblem(app.ev);
+        if (problem) return toast(problem);
+        cmd('event_save', { event: eventOut(app.ev) });
+        return go('schedule');
+      }
+      case 'evDelete':
+        if (await confirmBox('Delete this event?', describeEvent(eventOut(app.ev)), 'Delete', true)) { cmd('event_delete', { id: app.ev.id }); go('schedule'); }
+        return;
       case 'libEdit': app.libEdit = !app.libEdit; return render();
       case 'albumPlay': cmd('play_album', { name: app.album }); return closeSheet();
       case 'albumShuffle': cmd('play_album', { name: app.album, shuffle: true }); return closeSheet();
@@ -1162,6 +1377,11 @@ function bind() {
     pressKey(k.dataset.key);
   });
   $$('[data-input]').forEach(i => i.addEventListener('input', () => { app.join[i.dataset.input] = i.value; }));
+  // phones and PCs: the event editor's date and time pickers, and renaming presets
+  $$('[data-evin]').forEach(i => i.addEventListener('change', () => { if (app.ev) app.ev[i.dataset.evin] = i.value; }));
+  $$('[data-presetname]').forEach(i => i.addEventListener('change', () => {
+    if (i.value.trim()) cmd('preset_rename', { id: i.dataset.presetname, name: i.value.trim() });
+  }));
   $('#restoreFile')?.addEventListener('change', async e => {
     const f = e.target.files[0], msg = $('#restoreMsg');
     if (!f) return;

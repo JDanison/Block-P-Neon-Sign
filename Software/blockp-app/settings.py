@@ -18,6 +18,11 @@ DEFAULTS = {
         "idle_clock": False,          # small clock on the idle screen
     },
     "schedule": {"enabled": False, "off": "23:00", "on": "07:00"},
+    # Saved light looks: [{"id", "name", "lights": {"on", "mode", "color", "brightness", "speed"}}]
+    "presets": [],
+    # Scheduled events: [{"id", "enabled", "time": "HH:MM", "days": [0-6, Monday = 0] or "date": "YYYY-MM-DD",
+    #                     "action": {"type": ..., "preset": id}}]. One-date events remove themselves once run.
+    "events": [],
     "screen": {"rotation": 180, "auto_close": 15},
     "name": "Block P",
 }
